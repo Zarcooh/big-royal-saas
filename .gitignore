@@ -1,0 +1,32 @@
+# Entorno
+.env
+*.pyc
+__pycache__/
+*.pyo
+instance/
+
+# Entorno virtual
+venv/
+.env/
+env/
+.venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Archivos sensibles
+*.pem
+*.key
+credentials.json
+
+# Logs
+*.log
