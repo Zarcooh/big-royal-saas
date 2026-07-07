@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Administrador — Big Royal{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Panel de Administración</h1>
+    <p>Bienvenido, {{ session.usuario }}. Restaurante ID: {{ session.restaurante_id }}</p>
+</div>
+
+<div class="dashboard-cards">
+    <a href="{{ url_for('insumos.listar') }}" class="card">
+        <div class="card-icon">📦</div>
+        <h3>Catálogo de Insumos</h3>
+        <p>Gestiona los insumos del restaurante: crear, editar y eliminar.</p>
+    </a>
+
+    <div class="card card-disabled">
+        <div class="card-icon">📋</div>
+        <h3>Recetas</h3>
+        <p>Gestiona las recetas del menú. <em>(Próximamente — CU-03)</em></p>
+    </div>
+
+    <div class="card card-disabled">
+        <div class="card-icon">📊</div>
+        <h3>Ajustar Inventario</h3>
+        <p>Registra entradas y salidas manuales. <em>(Próximamente — CU-04)</em></p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Nuevo Insumo — Big Royal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>➕ Nuevo Insumo</h1>
+    <a href="{{ url_for('insumos.listar') }}" class="btn btn-secondary">← Volver al catálogo</a>
+</div>
+
+<div class="form-card">
+    <form method="POST" action="{{ url_for('insumos.crear') }}" id="insumoForm">
+        <div class="form-group">
+            <label for="nombre">Nombre del insumo <span class="required">*</span></label>
+            <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                placeholder="Ej: Harina de trigo"
+                required
+                maxlength="150"
+            >
+        </div>
+
+        <div class="form-group">
+            <label for="unidad">Unidad de medida <span class="required">*</span></label>
+            <select id="unidad" name="unidad" required>
+                <option value="" disabled selected>Selecciona una unidad…</option>
+                <option value="kg">Kilogramo (kg)</option>
+                <option value="g">Gramo (g)</option>
+                <option value="L">Litro (L)</option>
+                <option value="ml">Mililitro (ml)</option>
+                <option value="unidad">Unidad</option>
+                <option value="docena">Docena</option>
+                <option value="paquete">Paquete</option>
+                <option value="caja">Caja</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="stock_actual">Stock actual</label>
+                <input
+                    type="number"
+                    id="stock_actual"
+                    name="stock_actual"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    value="0"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="stock_minimo">Stock mínimo</label>
+                <input
+                    type="number"
+                    id="stock_minimo"
+                    name="stock_minimo"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    value="0"
+                >
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('insumos.listar') }}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-success">Guardar Insumo</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
