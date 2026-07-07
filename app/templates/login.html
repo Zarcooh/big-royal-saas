@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Iniciar Sesión — Big Royal{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-logo">🍔</div>
+        <h1>Big Royal SaaS</h1>
+        <p class="login-subtitle">Sistema de Abastecimiento e Inventario</p>
+
+        <form method="POST" action="{{ url_for('auth.login') }}" class="login-form" id="loginForm">
+            <div class="form-group">
+                <label for="email">Correo electrónico</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="admin@bigroyal.com"
+                    required
+                    autocomplete="email"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="••••••••"
+                    required
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="btnLogin">
+                Iniciar Sesión
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+{% endblock %}

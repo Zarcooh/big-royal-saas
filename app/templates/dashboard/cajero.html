@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Cajero — Big Royal{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Panel de Cajero</h1>
+    <p>Bienvenido, {{ session.usuario }}. Restaurante ID: {{ session.restaurante_id }}</p>
+</div>
+
+<div class="dashboard-cards">
+    <div class="card card-disabled">
+        <div class="card-icon">🛒</div>
+        <h3>Registrar Venta</h3>
+        <p>Procesa las ventas del día. <em>(Próximamente)</em></p>
+    </div>
+
+    <div class="card card-disabled">
+        <div class="card-icon">📄</div>
+        <h3>Historial de Ventas</h3>
+        <p>Consulta las transacciones realizadas. <em>(Próximamente)</em></p>
+    </div>
+</div>
+{% endblock %}
