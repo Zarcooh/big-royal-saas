@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Ajustar {{ insumo.nombre }} — Big Royal SaaS{% endblock %}
+
+{% block content %}
+<h1>Ajustar Inventario</h1>
+
+<table class="tabla ficha">
+    <tbody>
+        <tr><th>Insumo</th><td>{{ insumo.nombre }}</td></tr>
+        <tr><th>Stock actual</th><td>{{ insumo.stock_actual }} {{ insumo.unidad }}</td></tr>
+        <tr><th>Stock mínimo</th><td>{{ insumo.stock_minimo }} {{ insumo.unidad }}</td></tr>
+    </tbody>
+</table>
+
+<form method="post"
+      action="{{ url_for('inventario.ajustar', insumo_id=insumo.id) }}"
+      class="form-inline">
+    <h3>Registrar ajuste</h3>
+
+    <label for="tipo_operacion">Tipo de operación</label>
+    <select name="tipo_operacion" id="tipo_operacion" required>
+        {% for clave, cfg in tipos.items() %}
+        <option value="{{ clave }}">{{ cfg.etiqueta }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="cantidad">Cantidad ({{ insumo.unidad }})</label>
+    <input type="number" name="cantidad" id="cantidad" step="0.01" min="0.01" required>
+
+    <label for="motivo">Motivo</label>
+    <input type="text" name="motivo" id="motivo" maxlength="255" required
+           placeholder="Ej. Producto vencido, conteo físico, entrada de proveedor">
+
+    <button type="submit" class="btn">Confirmar ajuste</button>
+    <a class="btn btn-secundario" href="{{ url_for('inventario.listar') }}">Cancelar</a>
+</form>
+
+<p class="nota">
+    Ingreso suma al stock; merma y pérdida lo restan. El sistema no permite dejar el
+    stock en negativo y registra cada ajuste en el log de auditoría.
+</p>
+{% endblock %}

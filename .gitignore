@@ -27,6 +27,7 @@ Thumbs.db
 *.pem
 *.key
 credentials.json
+ignore-context/
 
 # Logs
 *.log

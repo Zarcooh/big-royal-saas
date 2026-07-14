@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Ajuste de Inventario — Big Royal SaaS{% endblock %}
+
+{% block content %}
+<h1>Ajuste de Inventario</h1>
+<p class="subtitulo">Registra mermas, pérdidas o ingresos manuales para cuadrar el stock físico.</p>
+
+<form method="get" action="{{ url_for('inventario.listar') }}" class="form-inline">
+    <label for="q">Buscar insumo</label>
+    <input type="text" name="q" id="q" value="{{ q }}" placeholder="Nombre del insumo">
+    <button type="submit" class="btn">Buscar</button>
+</form>
+
+{% if insumos %}
+<table class="tabla">
+    <thead>
+        <tr>
+            <th>Insumo</th>
+            <th>Stock actual</th>
+            <th>Stock mínimo</th>
+            <th>Unidad</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for insumo in insumos %}
+        <tr>
+            <td>{{ insumo.nombre }}</td>
+            <td>{{ insumo.stock_actual }}</td>
+            <td>{{ insumo.stock_minimo }}</td>
+            <td>{{ insumo.unidad }}</td>
+            <td>
+                <a class="btn" href="{{ url_for('inventario.ajustar', insumo_id=insumo.id) }}">Ajustar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="vacio">
+    {% if q %}No se encontraron insumos que coincidan con «{{ q }}».
+    {% else %}No hay insumos registrados en este restaurante.{% endif %}
+</p>
+{% endif %}
+{% endblock %}
