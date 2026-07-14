@@ -14,13 +14,17 @@ def create_app():
     from app.routes.insumos import insumos_bp
     from app.routes.recetas import recetas_bp
     from app.routes.inventario import inventario_bp
+    from app.routes.pedidos import pedidos_bp
     from app.routes.ventas import ventas_bp
+    from app.routes.dashboard import dashboard_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(insumos_bp)
     app.register_blueprint(recetas_bp)
     app.register_blueprint(inventario_bp)
+    app.register_blueprint(pedidos_bp)
     app.register_blueprint(ventas_bp)
+    app.register_blueprint(dashboard_bp)
 
     # Manejadores de error globales
     @app.errorhandler(404)

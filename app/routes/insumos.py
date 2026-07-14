@@ -241,6 +241,10 @@ def eliminar(id: str):
     """
     Elimina un insumo. Solo se permite vía POST.
 
+    RF-INV-04 (Flujo Básico paso 8 / Flujo Alterno 8.1):
+    valida que el insumo no esté asociado a ninguna receta activa
+    antes de eliminarlo.
+
     RN03: la eliminación valida que el insumo pertenezca al
     restaurante del usuario autenticado.
     """
@@ -252,6 +256,21 @@ def eliminar(id: str):
 
     restaurante_id = get_current_restaurante_id()
     supabase = get_supabase()
+
+    # ── RF-INV-04: Validar que el insumo no esté en recetas activas ──
+    receta_check = (
+        supabase.table("recetas")
+        .select("id")
+        .eq("insumo_id", id)
+        .limit(1)
+        .execute()
+    )
+    if receta_check.data:
+        flash(
+            "No se puede eliminar: el insumo está siendo usado en una o más recetas activas.",
+            "danger",
+        )
+        return redirect(url_for("insumos.listar"))
 
     try:
         respuesta = (
