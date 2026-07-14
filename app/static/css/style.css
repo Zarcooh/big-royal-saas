@@ -598,3 +598,30 @@ a.card:hover {
     .form-inline input,
     .form-inline select { flex: 1; min-width: 0; }
 }
+
+/* ---------- KPI Cards (CU-07 Dashboard) ---------- */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.kpi-card {
+    background: var(--color-card);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--color-border);
+    text-align: center;
+}
+
+.kpi-icon { font-size: 1.6rem; margin-bottom: 4px; }
+.kpi-value { font-size: 1.5rem; font-weight: 700; }
+.kpi-label { font-size: 0.82rem; color: var(--color-text-muted); margin-top: 2px; }
+
+.kpi-green  { border-left-color: var(--color-success); }
+.kpi-red    { border-left-color: var(--color-danger); }
+.kpi-orange { border-left-color: var(--color-warning); }
+.kpi-blue   { border-left-color: var(--color-info); }
+.kpi-purple { border-left-color: #9333ea; }
