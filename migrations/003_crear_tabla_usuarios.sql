@@ -1,15 +1,13 @@
 -- ============================================================
 -- Big Royal SaaS — Migración 003: crear tabla 'usuarios'
 -- ============================================================
--- CONTEXTO: La base del proyecto se creó sin la tabla 'usuarios'
--- (la migración 001 nunca se aplicó completa). Sin esta tabla el
--- login de CU-01 falla, porque auth.py consulta usuarios para
--- obtener restaurante_id y rol.
+-- CONTEXTO: la base del proyecto se creó a mano sin la tabla
+-- 'usuarios'. Sin ella el login de CU-01 falla, porque auth.py
+-- consulta 'usuarios' para obtener restaurante_id y rol.
 --
--- Esta migración crea SOLO 'usuarios' + su política RLS. No se
--- ejecuta el 001 completo a propósito: la tabla 'insumos' ya
--- existente no tiene columna updated_at, y el trigger de 001
--- romperia los UPDATE de insumos (CU-02 / CU-04).
+-- Por eso 'usuarios' NO está en la 001: esa migración refleja el
+-- esquema base tal como existía (8 tablas, sin usuarios), y esta
+-- la añade encima. Ejecuta la cadena completa 001 → 006.
 --
 -- Ejecutar en el SQL Editor de Supabase del proyecto correcto
 -- (el mismo del .env: mtogjgipqbzfphuqysag).
