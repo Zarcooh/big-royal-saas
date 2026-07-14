@@ -14,16 +14,16 @@
         <p>Gestiona los insumos del restaurante: crear, editar y eliminar.</p>
     </a>
 
-    <div class="card card-disabled">
+    <a href="{{ url_for('recetas.listar') }}" class="card">
         <div class="card-icon">📋</div>
         <h3>Recetas</h3>
-        <p>Gestiona las recetas del menú. <em>(Próximamente — CU-03)</em></p>
-    </div>
+        <p>Define qué insumos consume cada producto del menú.</p>
+    </a>
 
-    <div class="card card-disabled">
+    <a href="{{ url_for('inventario.listar') }}" class="card">
         <div class="card-icon">📊</div>
         <h3>Ajustar Inventario</h3>
-        <p>Registra entradas y salidas manuales. <em>(Próximamente — CU-04)</em></p>
-    </div>
+        <p>Registra entradas, mermas y pérdidas de stock.</p>
+    </a>
 </div>
 {% endblock %}
