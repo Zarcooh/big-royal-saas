@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Venta — Big Royal SaaS{% endblock %}
+
+{% block content %}
+<h1>Registrar Venta</h1>
+<p class="subtitulo">
+    Al confirmar la venta, el sistema descuenta automáticamente el stock de los
+    insumos según la receta del producto.
+</p>
+
+{% if resumen %}
+<div class="resumen-venta">
+    <h3>Venta registrada</h3>
+    <p>
+        {{ resumen.cantidad }} × <strong>{{ resumen.producto }}</strong>
+        — Total: <strong>S/ {{ "%.2f"|format(resumen.total) }}</strong>
+    </p>
+
+    {% if resumen.insumos %}
+    <table class="tabla">
+        <thead>
+            <tr>
+                <th>Insumo descontado</th>
+                <th>Cantidad</th>
+                <th>Stock actual</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for insumo in resumen.insumos %}
+            <tr>
+                <td>{{ insumo.nombre }}</td>
+                <td>−{{ insumo.descontado }} {{ insumo.unidad }}</td>
+                <td>{{ insumo.stock_actual }} {{ insumo.unidad }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="vacio">Este producto no tiene receta: no se descontó ningún insumo.</p>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if pendiente %}
+<div class="nota">
+    <p>
+        El producto seleccionado <strong>no tiene receta configurada</strong>, así que
+        la venta quedará registrada sin descontar stock de ningún insumo.
+    </p>
+    <form method="post" action="{{ url_for('ventas.confirmar') }}" class="form-inline">
+        <input type="hidden" name="producto_id" value="{{ pendiente.producto_id }}">
+        <input type="hidden" name="cantidad" value="{{ pendiente.cantidad }}">
+        <input type="hidden" name="confirmar_sin_receta" value="1">
+        <button type="submit" class="btn">Continuar de todos modos</button>
+        <a class="btn btn-secundario" href="{{ url_for('ventas.registrar') }}">Cancelar</a>
+    </form>
+</div>
+{% endif %}
+
+{% if productos %}
+<table class="tabla">
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Precio</th>
+            <th>Consume por unidad</th>
+            <th>Cantidad</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for producto in productos %}
+        <tr>
+            <td><strong>{{ producto.nombre }}</strong></td>
+            <td>S/ {{ "%.2f"|format(producto.precio or 0) }}</td>
+            <td>
+                {% if producto.receta %}
+                <ul class="lista-receta">
+                    {% for insumo in producto.receta %}
+                    <li>
+                        {{ insumo.cantidad_consumo }} {{ insumo.unidad }} de {{ insumo.nombre }}
+                        <span class="stock-badge {{ 'badge-danger' if insumo.stock_actual < insumo.cantidad_consumo else 'badge-success' }}">
+                            quedan {{ insumo.stock_actual }}
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <em>Sin receta configurada</em>
+                {% endif %}
+            </td>
+            <td>
+                <form method="post"
+                      action="{{ url_for('ventas.confirmar') }}"
+                      class="form-inline"
+                      id="venta-{{ producto.id }}">
+                    <input type="hidden" name="producto_id" value="{{ producto.id }}">
+                    <input type="number" name="cantidad" value="1"
+                           step="1" min="1" required aria-label="Cantidad">
+                </form>
+            </td>
+            <td>
+                <button type="submit" form="venta-{{ producto.id }}" class="btn">
+                    Vender
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="vacio">
+    No hay productos registrados en este restaurante. El Administrador debe crear
+    productos y sus recetas antes de poder vender.
+</p>
+{% endif %}
+{% endblock %}

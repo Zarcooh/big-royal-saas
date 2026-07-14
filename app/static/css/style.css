@@ -423,6 +423,30 @@ th.col-acciones { display: table-cell; }
 }
 
 
+/* ---------- Venta (CU-06) ---------- */
+.resumen-venta {
+    margin-bottom: 1.75rem;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--exito);
+    border-left-width: 4px;
+    border-radius: var(--radio);
+    background: var(--superficie);
+    box-shadow: var(--sombra);
+}
+
+.resumen-venta h3 { margin: 0 0 .35rem; color: #065f46; }
+.resumen-venta > p { margin: 0 0 1rem; }
+
+.lista-receta {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: .9rem;
+}
+
+.lista-receta li { margin-bottom: .25rem; }
+.lista-receta li:last-child { margin-bottom: 0; }
+
+
 /* ---------- Badges ---------- */
 .stock-badge {
     display: inline-block;
