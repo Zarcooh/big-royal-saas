@@ -8,7 +8,7 @@ RNF-INV-PER-02: tabla de consumo con respuesta < 3 segundos.
 RN03: todas las agregaciones filtran por restaurante_id.
 """
 
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import csv
 import io
 
@@ -134,6 +134,26 @@ def _kpis(restaurante_id: str) -> dict:
     }
 
 
+def _dia_siguiente(fecha_str: str) -> str:
+    """
+    Devuelve la fecha del día siguiente en ISO, para usarla como cota
+    superior EXCLUSIVA en filtros sobre columnas TIMESTAMPTZ.
+
+    'created_at' es TIMESTAMPTZ y las fechas del filtro llegan como
+    'YYYY-MM-DD'. Comparar `created_at <= 'YYYY-MM-DD'` equivale a
+    `<= las 00:00 de ese día`, así que dejaría fuera todas las ventas
+    hechas durante el propio día 'hasta'. Usando `< día_siguiente` se
+    incluye el día completo.
+    """
+    try:
+        return (
+            datetime.strptime(fecha_str, "%Y-%m-%d").date() + timedelta(days=1)
+        ).isoformat()
+    except (ValueError, TypeError):
+        # Formato inesperado: se devuelve tal cual para no romper la consulta.
+        return fecha_str
+
+
 def _tabla_consumo(restaurante_id: str, desde: str, hasta: str):
     """
     Consulta la tabla de consumo de insumos por ventas en el rango
@@ -141,13 +161,15 @@ def _tabla_consumo(restaurante_id: str, desde: str, hasta: str):
     """
     supabase = get_supabase_usuario()
 
-    # Obtener ventas del periodo
+    # Cota superior exclusiva: inicio del día siguiente a 'hasta' (ver
+    # _dia_siguiente). Con `.lte("created_at", hasta)` se perderían las
+    # ventas del propio día 'hasta'.
     ventas = (
         supabase.table("ventas")
         .select("id, total, created_at")
         .eq("restaurante_id", restaurante_id)
         .gte("created_at", desde)
-        .lte("created_at", hasta)
+        .lt("created_at", _dia_siguiente(hasta))
         .order("created_at", desc=True)
         .execute()
     )
