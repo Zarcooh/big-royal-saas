@@ -4,7 +4,7 @@ Blueprint de autenticación — login, logout y dashboard por rol.
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from app.utils.supabase_client import get_supabase
+from app.utils.supabase_client import get_supabase, get_supabase_usuario
 from app.utils.auth import login_required
 
 auth_bp = Blueprint("auth", __name__)
@@ -65,6 +65,15 @@ def login():
         session["restaurante_id"] = perfil["restaurante_id"]
         session["rol"] = perfil["rol"]
         session["access_token"] = auth_response.session.access_token
+
+        # CU-01: registrarIngreso() -> e_LogAuditoria. Deja constancia del
+        # acceso en auditoria_accesos vía la RPC (deriva usuario/restaurante
+        # del token). No es bloqueante: un fallo de auditoría no debe impedir
+        # el acceso del usuario ya autenticado.
+        try:
+            get_supabase_usuario().rpc("registrar_ingreso", {}).execute()
+        except Exception as audit_error:
+            print(f"[auditoria_accesos] No se pudo registrar el ingreso: {audit_error}")
 
         flash(f"Bienvenido, {email}.", "success")
         return redirect(url_for("auth.dashboard"))
