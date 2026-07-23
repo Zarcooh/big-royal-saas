@@ -7,6 +7,15 @@
     <a href="{{ url_for('insumos.crear') }}" class="btn btn-success">+ Nuevo Insumo</a>
 </div>
 
+<form method="get" action="{{ url_for('insumos.listar') }}" class="form-inline" style="margin-bottom: 16px;">
+    <label for="q">Buscar insumo</label>
+    <input type="text" name="q" id="q" value="{{ q }}" placeholder="Nombre del insumo">
+    <button type="submit" class="btn btn-primary">Buscar</button>
+    {% if q %}
+    <a href="{{ url_for('insumos.listar') }}" class="btn btn-secondary">Limpiar</a>
+    {% endif %}
+</form>
+
 {% if insumos %}
 <div class="table-responsive">
     <table class="table">
@@ -40,6 +49,11 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
+{% elif q %}
+<div class="empty-state">
+    <p>🔍 No se encontraron insumos que coincidan con «{{ q }}».</p>
+    <a href="{{ url_for('insumos.listar') }}" class="btn btn-secondary">Ver todos</a>
 </div>
 {% else %}
 <div class="empty-state">
