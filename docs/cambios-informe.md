@@ -20,6 +20,13 @@ CU que cubriera su gestión, pese a que las recetas (CU-06..12) y la venta
 (CU-15) dependen de que existan productos. Estos cuatro CU cubren ese vacío,
 siguiendo el mismo patrón que los de Insumos (CU-02..05).
 
+> **Importante:** estos CU **no** agregan ninguna tabla nueva. Operan sobre la
+> tabla `productos` que **ya existía** desde la migración `001_initial_schema.sql`
+> (columnas `id`, `restaurante_id`, `nombre`, `precio`, `created_at`) y cuyas
+> políticas RLS de INSERT/UPDATE/DELETE ya venían de la migración 004. Lo único
+> nuevo es la **interfaz** para gestionarla. En el diagrama entidad-relación,
+> `productos` no es una entidad nueva.
+
 ### CU-22. Listar Productos
 - **Actor:** Administrador.
 - **Descripción:** Muestra el catálogo de productos del restaurante con su
