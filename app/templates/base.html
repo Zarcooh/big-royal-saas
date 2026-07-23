@@ -15,7 +15,7 @@
             {% if session.rol == 'Administrador' %}
             <a href="{{ url_for('auth.dashboard') }}">Panel</a>
             <a href="{{ url_for('insumos.listar') }}">Insumos</a>
-            <a href="{{ url_for('recetas.listar') }}">Productos</a>
+            <a href="{{ url_for('productos.listar') }}">Productos</a>
             <a href="{{ url_for('inventario.listar') }}">Inventario</a>
             <a href="{{ url_for('pedidos.listar') }}">Pedidos</a>
             <a href="{{ url_for('dashboard_rpt.index') }}">Reportes</a>

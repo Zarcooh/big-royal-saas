@@ -5,7 +5,7 @@
 {% block content %}
 <div class="page-header">
     <h1>Receta de «{{ producto.nombre }}»</h1>
-    <a href="{{ url_for('recetas.listar') }}" class="btn btn-secondary">← Volver al catálogo</a>
+    <a href="{{ url_for('productos.listar') }}" class="btn btn-secondary">← Volver al catálogo</a>
 </div>
 <p class="subtitulo">Configura los insumos que consume este producto por unidad vendida.</p>
 
@@ -25,7 +25,7 @@
             <td>{{ fila.insumos.nombre }}</td>
             <td>
                 <form method="post" class="form-inline"
-                      action="{{ url_for('recetas.editar_insumo', producto_id=producto.id, linea_id=fila.id) }}">
+                      action="{{ url_for('productos.editar_insumo', producto_id=producto.id, linea_id=fila.id) }}">
                     <input type="number" name="cantidad_consumo" value="{{ fila.cantidad_consumo }}"
                            step="0.001" min="0.001" required style="width: 110px;"
                            aria-label="Cantidad de consumo de {{ fila.insumos.nombre }}">
@@ -35,7 +35,7 @@
             <td>{{ fila.insumos.unidad }}</td>
             <td class="col-acciones">
                 <form method="post" class="form-inline"
-                      action="{{ url_for('recetas.eliminar_insumo', producto_id=producto.id, linea_id=fila.id) }}"
+                      action="{{ url_for('productos.eliminar_insumo', producto_id=producto.id, linea_id=fila.id) }}"
                       onsubmit="return confirm('¿Quitar «{{ fila.insumos.nombre }}» de esta receta?');">
                     <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
                 </form>
@@ -46,7 +46,7 @@
 </table>
 
 <form method="post" class="form-inline"
-      action="{{ url_for('recetas.eliminar_receta', producto_id=producto.id) }}"
+      action="{{ url_for('productos.eliminar_receta', producto_id=producto.id) }}"
       onsubmit="return confirm('¿Eliminar la receta completa de «{{ producto.nombre }}»? El producto seguirá existiendo, pero venderlo ya no descontará stock.');">
     <button type="submit" class="btn btn-danger">Eliminar receta completa</button>
 </form>
@@ -55,7 +55,7 @@
 {% endif %}
 
 <form method="post"
-      action="{{ url_for('recetas.agregar_insumo', producto_id=producto.id) }}"
+      action="{{ url_for('productos.agregar_insumo', producto_id=producto.id) }}"
       class="form-inline">
     <h3>Agregar insumo a la receta</h3>
 

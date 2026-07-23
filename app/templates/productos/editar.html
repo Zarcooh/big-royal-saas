@@ -4,11 +4,11 @@
 {% block content %}
 <div class="page-header">
     <h1>✏️ Editar Producto</h1>
-    <a href="{{ url_for('recetas.listar') }}" class="btn btn-secondary">← Volver al catálogo</a>
+    <a href="{{ url_for('productos.listar') }}" class="btn btn-secondary">← Volver al catálogo</a>
 </div>
 
 <div class="form-card">
-    <form method="POST" action="{{ url_for('recetas.editar', producto_id=producto.id) }}">
+    <form method="POST" action="{{ url_for('productos.editar', producto_id=producto.id) }}">
         <div class="form-group">
             <label for="nombre">Nombre del producto <span class="required">*</span></label>
             <input
@@ -34,7 +34,7 @@
         </div>
 
         <div class="form-actions">
-            <a href="{{ url_for('recetas.listar') }}" class="btn btn-secondary">Cancelar</a>
+            <a href="{{ url_for('productos.listar') }}" class="btn btn-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">Guardar Cambios</button>
         </div>
     </form>

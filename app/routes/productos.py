@@ -1,11 +1,11 @@
 """
-CU-03: Gestionar Recetas
-Blueprint de recetas — catálogo de productos y, por cada producto, la receta
-que define qué insumos consume por unidad vendida.
+Módulo Productos (CU-22..25 + gestión de receta CU-08/10/11/12)
+Blueprint 'productos' (URL /productos) — catálogo de productos y, por cada
+producto, la receta que define qué insumos consume por unidad vendida.
 
 La página principal es un catálogo de PRODUCTOS al estilo del de insumos:
 crear, editar y eliminar productos, y desde cada fila "Gestionar receta" para
-armar/editar/quitar sus insumos.
+armar/editar/quitar sus insumos. (La tabla de BD sigue llamándose 'recetas'.)
 
 RN03 / RF-INV-09: la tabla 'recetas' no tiene columna restaurante_id; el tenant
 se deriva de productos.restaurante_id e insumos.restaurante_id. Por eso toda
@@ -26,7 +26,7 @@ from flask import (
 from app.utils.auth import login_required, admin_required, get_current_restaurante_id
 from app.utils.supabase_client import get_supabase_usuario
 
-recetas_bp = Blueprint("recetas", __name__, url_prefix="/recetas")
+productos_bp = Blueprint("productos", __name__, url_prefix="/productos")
 
 
 # ---------------------------------------------------------------------------
@@ -111,7 +111,7 @@ def _validar_precio(valor: str):
 # LISTAR — catálogo de productos con el estado de su receta (RF-INV-07)
 # ---------------------------------------------------------------------------
 
-@recetas_bp.route("/")
+@productos_bp.route("/")
 @login_required
 @admin_required
 def listar():
@@ -153,14 +153,14 @@ def listar():
         for p in productos:
             p["num_insumos"] = conteo.get(p["id"], 0)
 
-    return render_template("recetas/listar.html", productos=productos, q=q)
+    return render_template("productos/listar.html", productos=productos, q=q)
 
 
 # ---------------------------------------------------------------------------
 # CREAR producto
 # ---------------------------------------------------------------------------
 
-@recetas_bp.route("/crear", methods=["GET", "POST"])
+@productos_bp.route("/crear", methods=["GET", "POST"])
 @login_required
 @admin_required
 def crear():
@@ -174,7 +174,7 @@ def crear():
     RN03: el producto creado lleva siempre el restaurante_id de la sesión.
     """
     if request.method == "GET":
-        return render_template("recetas/crear.html")
+        return render_template("productos/crear.html")
 
     restaurante_id = get_current_restaurante_id()
     supabase = get_supabase_usuario()
@@ -191,7 +191,7 @@ def crear():
     if errores:
         for error in errores:
             flash(error, "danger")
-        return render_template("recetas/crear.html")
+        return render_template("productos/crear.html")
 
     try:
         respuesta = (
@@ -207,21 +207,21 @@ def crear():
         )
     except Exception as e:
         flash(f"Error al crear el producto: {str(e)}", "danger")
-        return render_template("recetas/crear.html")
+        return render_template("productos/crear.html")
 
     nuevo_id = respuesta.data[0]["id"] if respuesta.data else None
     flash(f"Producto «{nombre}» creado. Ahora agrégale insumos a su receta.", "success")
 
     if nuevo_id:
-        return redirect(url_for("recetas.gestionar", producto_id=nuevo_id))
-    return redirect(url_for("recetas.listar"))
+        return redirect(url_for("productos.gestionar", producto_id=nuevo_id))
+    return redirect(url_for("productos.listar"))
 
 
 # ---------------------------------------------------------------------------
 # EDITAR producto (nombre y precio)
 # ---------------------------------------------------------------------------
 
-@recetas_bp.route("/editar/<producto_id>", methods=["GET", "POST"])
+@productos_bp.route("/editar/<producto_id>", methods=["GET", "POST"])
 @login_required
 @admin_required
 def editar(producto_id: str):
@@ -235,7 +235,7 @@ def editar(producto_id: str):
     """
     if not _es_uuid(producto_id):
         flash("El identificador del producto no es válido.", "danger")
-        return redirect(url_for("recetas.listar"))
+        return redirect(url_for("productos.listar"))
 
     restaurante_id = get_current_restaurante_id()
     supabase = get_supabase_usuario()
@@ -243,10 +243,10 @@ def editar(producto_id: str):
     producto = _producto_del_tenant(producto_id, restaurante_id)
     if producto is None:
         flash("El producto seleccionado no existe.", "danger")
-        return redirect(url_for("recetas.listar"))
+        return redirect(url_for("productos.listar"))
 
     if request.method == "GET":
-        return render_template("recetas/editar.html", producto=producto)
+        return render_template("productos/editar.html", producto=producto)
 
     nombre = request.form.get("nombre", "").strip()
     precio, error_precio = _validar_precio(request.form.get("precio", "0").strip())
@@ -260,7 +260,7 @@ def editar(producto_id: str):
     if errores:
         for error in errores:
             flash(error, "danger")
-        return render_template("recetas/editar.html", producto=producto)
+        return render_template("productos/editar.html", producto=producto)
 
     try:
         (
@@ -273,16 +273,16 @@ def editar(producto_id: str):
         flash(f"Producto «{nombre}» actualizado.", "success")
     except Exception as e:
         flash(f"Error al actualizar el producto: {str(e)}", "danger")
-        return render_template("recetas/editar.html", producto=producto)
+        return render_template("productos/editar.html", producto=producto)
 
-    return redirect(url_for("recetas.listar"))
+    return redirect(url_for("productos.listar"))
 
 
 # ---------------------------------------------------------------------------
 # ELIMINAR producto (arrastra su receta por ON DELETE CASCADE)
 # ---------------------------------------------------------------------------
 
-@recetas_bp.route("/eliminar/<producto_id>", methods=["POST"])
+@productos_bp.route("/eliminar/<producto_id>", methods=["POST"])
 @login_required
 @admin_required
 def eliminar(producto_id: str):
@@ -298,7 +298,7 @@ def eliminar(producto_id: str):
     """
     if not _es_uuid(producto_id):
         flash("El identificador del producto no es válido.", "danger")
-        return redirect(url_for("recetas.listar"))
+        return redirect(url_for("productos.listar"))
 
     restaurante_id = get_current_restaurante_id()
     supabase = get_supabase_usuario()
@@ -306,7 +306,7 @@ def eliminar(producto_id: str):
     producto = _producto_del_tenant(producto_id, restaurante_id)
     if producto is None:
         flash("El producto seleccionado no existe.", "danger")
-        return redirect(url_for("recetas.listar"))
+        return redirect(url_for("productos.listar"))
 
     tiene_ventas = (
         supabase.table("detalle_ventas")
@@ -322,7 +322,7 @@ def eliminar(producto_id: str):
             "Puedes eliminar su receta o editar su precio.",
             "danger",
         )
-        return redirect(url_for("recetas.listar"))
+        return redirect(url_for("productos.listar"))
 
     try:
         respuesta = (
@@ -339,14 +339,14 @@ def eliminar(producto_id: str):
     except Exception as e:
         flash(f"Error al eliminar el producto: {str(e)}", "danger")
 
-    return redirect(url_for("recetas.listar"))
+    return redirect(url_for("productos.listar"))
 
 
 # ---------------------------------------------------------------------------
 # GESTIONAR RECETA — ver la receta del producto y su formulario de alta
 # ---------------------------------------------------------------------------
 
-@recetas_bp.route("/<uuid:producto_id>/gestionar")
+@productos_bp.route("/<uuid:producto_id>/gestionar")
 @login_required
 @admin_required
 def gestionar(producto_id):
@@ -362,7 +362,7 @@ def gestionar(producto_id):
     producto = _producto_del_tenant(producto_id, restaurante_id)
     if producto is None:
         flash("El producto seleccionado no existe.", "danger")
-        return redirect(url_for("recetas.listar"))
+        return redirect(url_for("productos.listar"))
 
     receta = _receta_de(producto_id)
     ya_en_receta = {fila["insumo_id"] for fila in receta}
@@ -384,7 +384,7 @@ def gestionar(producto_id):
 # AGREGAR INSUMO A LA RECETA (RF-INV-08)
 # ---------------------------------------------------------------------------
 
-@recetas_bp.route("/<uuid:producto_id>/insumos", methods=["POST"])
+@productos_bp.route("/<uuid:producto_id>/insumos", methods=["POST"])
 @login_required
 @admin_required
 def agregar_insumo(producto_id):
@@ -398,11 +398,11 @@ def agregar_insumo(producto_id):
     producto_id = str(producto_id)
     restaurante_id = get_current_restaurante_id()
     supabase = get_supabase_usuario()
-    destino = url_for("recetas.gestionar", producto_id=producto_id)
+    destino = url_for("productos.gestionar", producto_id=producto_id)
 
     if _producto_del_tenant(producto_id, restaurante_id) is None:
         flash("El producto seleccionado no existe.", "danger")
-        return redirect(url_for("recetas.listar"))
+        return redirect(url_for("productos.listar"))
 
     insumo_id = request.form.get("insumo_id", "").strip()
     if not insumo_id or not _es_uuid(insumo_id):
@@ -445,7 +445,7 @@ def agregar_insumo(producto_id):
 # EDITAR LA CANTIDAD DE UNA LÍNEA DE LA RECETA
 # ---------------------------------------------------------------------------
 
-@recetas_bp.route("/<uuid:producto_id>/insumos/<uuid:linea_id>/editar", methods=["POST"])
+@productos_bp.route("/<uuid:producto_id>/insumos/<uuid:linea_id>/editar", methods=["POST"])
 @login_required
 @admin_required
 def editar_insumo(producto_id, linea_id):
@@ -460,12 +460,12 @@ def editar_insumo(producto_id, linea_id):
     linea_id = str(linea_id)
     restaurante_id = get_current_restaurante_id()
     supabase = get_supabase_usuario()
-    destino = url_for("recetas.gestionar", producto_id=producto_id)
+    destino = url_for("productos.gestionar", producto_id=producto_id)
 
     # RN03: 'recetas' no tiene restaurante_id; el tenant se valida por el producto.
     if _producto_del_tenant(producto_id, restaurante_id) is None:
         flash("El producto seleccionado no existe.", "danger")
-        return redirect(url_for("recetas.listar"))
+        return redirect(url_for("productos.listar"))
 
     cantidad = request.form.get("cantidad_consumo", type=float)
     if cantidad is None or cantidad <= 0:
@@ -494,7 +494,7 @@ def editar_insumo(producto_id, linea_id):
 # ELIMINAR UN INSUMO DE LA RECETA
 # ---------------------------------------------------------------------------
 
-@recetas_bp.route("/<uuid:producto_id>/insumos/<uuid:linea_id>/eliminar", methods=["POST"])
+@productos_bp.route("/<uuid:producto_id>/insumos/<uuid:linea_id>/eliminar", methods=["POST"])
 @login_required
 @admin_required
 def eliminar_insumo(producto_id, linea_id):
@@ -503,11 +503,11 @@ def eliminar_insumo(producto_id, linea_id):
     linea_id = str(linea_id)
     restaurante_id = get_current_restaurante_id()
     supabase = get_supabase_usuario()
-    destino = url_for("recetas.gestionar", producto_id=producto_id)
+    destino = url_for("productos.gestionar", producto_id=producto_id)
 
     if _producto_del_tenant(producto_id, restaurante_id) is None:
         flash("El producto seleccionado no existe.", "danger")
-        return redirect(url_for("recetas.listar"))
+        return redirect(url_for("productos.listar"))
 
     respuesta = (
         supabase.table("recetas")
@@ -529,7 +529,7 @@ def eliminar_insumo(producto_id, linea_id):
 # ELIMINAR LA RECETA COMPLETA (deja el producto, vacía sus líneas)
 # ---------------------------------------------------------------------------
 
-@recetas_bp.route("/<uuid:producto_id>/receta/eliminar", methods=["POST"])
+@productos_bp.route("/<uuid:producto_id>/receta/eliminar", methods=["POST"])
 @login_required
 @admin_required
 def eliminar_receta(producto_id):
@@ -543,12 +543,12 @@ def eliminar_receta(producto_id):
     producto_id = str(producto_id)
     restaurante_id = get_current_restaurante_id()
     supabase = get_supabase_usuario()
-    destino = url_for("recetas.gestionar", producto_id=producto_id)
+    destino = url_for("productos.gestionar", producto_id=producto_id)
 
     producto = _producto_del_tenant(producto_id, restaurante_id)
     if producto is None:
         flash("El producto seleccionado no existe.", "danger")
-        return redirect(url_for("recetas.listar"))
+        return redirect(url_for("productos.listar"))
 
     respuesta = (
         supabase.table("recetas").delete().eq("producto_id", producto_id).execute()

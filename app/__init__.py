@@ -12,7 +12,7 @@ def create_app():
     # Registrar Blueprints
     from app.routes.auth import auth_bp
     from app.routes.insumos import insumos_bp
-    from app.routes.recetas import recetas_bp
+    from app.routes.productos import productos_bp
     from app.routes.inventario import inventario_bp
     from app.routes.pedidos import pedidos_bp
     from app.routes.ventas import ventas_bp
@@ -20,7 +20,7 @@ def create_app():
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(insumos_bp)
-    app.register_blueprint(recetas_bp)
+    app.register_blueprint(productos_bp)
     app.register_blueprint(inventario_bp)
     app.register_blueprint(pedidos_bp)
     app.register_blueprint(ventas_bp)

@@ -471,7 +471,9 @@ plantilla de casos de uso del equipo.
 - **Módulo renombrado a "Productos":** en la interfaz (navbar, panel y
   encabezado) el módulo se llama **Productos**, no "Recetas": la pantalla es el
   catálogo de productos y la receta es una función por producto ("Gestionar
-  receta"). La URL interna sigue siendo `/recetas`.
+  receta"). La ruta interna es **`/productos`** (blueprint `productos`,
+  `app/routes/productos.py`, plantillas en `app/templates/productos/`). La
+  **tabla de BD sigue llamándose `recetas`**.
 - **CU-06, CU-07 y CU-09 dejan de ser CU propios** (decisión del equipo):
   - **CU-06 (Listar Recetas)** = misma interfaz que **CU-22 (Listar Productos)**.
   - **CU-07 (Agregar Recetas)** = **CU-10 (Agregar Insumo a Receta)** (no hay un
