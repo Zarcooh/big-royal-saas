@@ -20,9 +20,9 @@ plantilla de casos de uso del equipo.
 | --- | --- | --- |
 | CU-02 | Listar Insumos | Ampliado (buscador) |
 | CU-06 | Listar Recetas | Implementado (catálogo de productos) |
-| CU-07 | Agregar Recetas | Implementado (vía CU-10) |
+| CU-07 | Gestionar Receta (unifica Agregar y Editar) | Implementado |
 | CU-08 | Eliminar Receta | Implementado |
-| CU-09 | Editar Receta | Implementado (vía CU-10/11/12) |
+| CU-09 | Editar Receta | **Unificado en CU-07** (Gestionar Receta) |
 | CU-10 | Agregar Insumo a Receta | Implementado |
 | CU-11 | Eliminar Insumo de Receta | Implementado |
 | CU-12 | Editar Insumo de Receta | Implementado (requirió migración 009) |
@@ -99,30 +99,35 @@ plantilla de casos de uso del equipo.
 
 ---
 
-### CU-07 — Agregar Recetas
+### CU-07 — Gestionar Receta
 
-| Caso de uso | Agregar Recetas |
+> Unifica lo que antes eran **CU-07 (Agregar Receta)** y **CU-09 (Editar
+> Receta)**: en la app no hay pantallas separadas de crear ni editar receta,
+> solo la pantalla "Gestionar receta" donde se realizan todas las operaciones.
+
+| Caso de uso | Gestionar Receta |
 | --- | --- |
-| **ID** | CU-07 |
+| **ID** | CU-07 (unifica CU-07 y CU-09) |
 | **Actor(es)** | Administrador |
-| **Objetivo** | Permitir al Administrador definir la receta de un producto, indicando los insumos que consume por unidad vendida. |
+| **Objetivo** | Permitir al Administrador definir y modificar la receta de un producto desde una sola pantalla: ver los insumos actuales, agregar insumos, cambiar cantidades y quitar insumos. |
 
 **Flujo básico**
 
 | Acción del Actor | Respuesta del Sistema |
 | --- | --- |
-| 1. Desde el catálogo, el Administrador selecciona "Gestionar receta" de un producto sin receta. | 2. El sistema muestra la pantalla de gestión de receta (vacía) con el formulario para agregar insumos. |
-| 3. El Administrador agrega uno o más insumos con su cantidad de consumo (ver CU-10). | 4. El sistema registra cada insumo en la receta del producto y actualiza la vista. |
+| 1. Desde el catálogo, el Administrador selecciona "Gestionar receta" de un producto. | 2. El sistema muestra la receta actual del producto (insumos y cantidades) o, si no tiene, una vista vacía; en ambos casos con el formulario para agregar insumos. |
+| 3. El Administrador agrega un insumo con su cantidad (CU-10), edita la cantidad de un insumo (CU-12) o quita un insumo (CU-11). | 4. El sistema valida y aplica cada operación, actualizando la receta. |
+| 5. (Opcional) El Administrador elimina la receta completa (CU-08). | 6. El sistema vacía la receta del producto. |
 
 **Flujos alternos**
 
-- **1.1.** Si el producto ya tiene receta, el sistema muestra los insumos existentes (pasa a Editar Receta, CU-09).
-- **3.1.** Si no hay insumos en el catálogo, el sistema informa que primero deben crearse insumos.
+- **2.1.** Si el producto no tiene receta, la vista aparece vacía; la primera adición de insumos crea la receta.
+- **3.1.** Si no hay insumos disponibles en el catálogo, el sistema informa que primero deben crearse insumos.
 
 **Condiciones**
 
-- **Pre-condiciones:** sesión con rol Administrador; el producto existe y pertenece al restaurante.
-- **Post-condiciones:** el producto queda con una receta compuesta por los insumos agregados.
+- **Pre-condiciones:** sesión con rol Administrador; el producto pertenece al restaurante.
+- **Post-condiciones:** la receta del producto queda creada o actualizada según las operaciones realizadas.
 
 ---
 
@@ -150,32 +155,6 @@ plantilla de casos de uso del equipo.
 
 - **Pre-condiciones:** sesión con rol Administrador; el producto pertenece al restaurante.
 - **Post-condiciones:** el producto queda sin receta (vendible sin descuento automático de stock).
-
----
-
-### CU-09 — Editar Receta
-
-| Caso de uso | Editar Receta |
-| --- | --- |
-| **ID** | CU-09 |
-| **Actor(es)** | Administrador |
-| **Objetivo** | Permitir al Administrador modificar la receta de un producto: agregar, cambiar la cantidad o quitar insumos. |
-
-**Flujo básico**
-
-| Acción del Actor | Respuesta del Sistema |
-| --- | --- |
-| 1. Desde el catálogo, el Administrador selecciona "Gestionar receta" de un producto con receta. | 2. El sistema muestra los insumos actuales de la receta con sus cantidades y las opciones de gestión. |
-| 3. El Administrador agrega un insumo (CU-10), cambia la cantidad de un insumo (CU-12) o quita un insumo (CU-11). | 4. El sistema aplica el cambio y actualiza la receta. |
-
-**Flujos alternos**
-
-- **2.1.** Si el producto no tiene receta, el sistema muestra la pantalla vacía para empezar a agregarla (CU-07).
-
-**Condiciones**
-
-- **Pre-condiciones:** sesión con rol Administrador; el producto pertenece al restaurante.
-- **Post-condiciones:** la receta queda actualizada con los cambios realizados.
 
 ---
 
@@ -537,10 +516,11 @@ plantilla de casos de uso del equipo.
 - **CU-17. Generar Alerta de Stock Mínimo:** hoy solo se refleja como el KPI
   "insumos críticos" del dashboard y la lista de críticos en Pedidos; no hay una
   alerta dedicada.
-- **CU-07 / CU-09 (Agregar / Editar Receta):** se documentan como CU "sombrilla"
-  que se materializan a través de las operaciones por insumo (CU-10 agregar,
-  CU-11 quitar, CU-12 editar). No hay una pantalla separada de crear/editar
-  receta con un guardado único: se gestiona insumo por insumo.
+- **CU-07 / CU-09 unificados:** se decidió unir "Agregar Receta" (CU-07) y
+  "Editar Receta" (CU-09) en un único CU-07 "Gestionar Receta", porque en la app
+  no hay pantallas separadas de crear ni editar receta: todo ocurre en la pantalla
+  "Gestionar receta" mediante las operaciones por insumo (CU-08/10/11/12). El
+  número CU-09 queda libre para reasignar.
 
 ---
 
