@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Receta de {{ producto.nombre }} — Big Royal SaaS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Receta de «{{ producto.nombre }}»</h1>
+    <a href="{{ url_for('recetas.listar') }}" class="btn btn-secondary">← Volver al catálogo</a>
+</div>
+<p class="subtitulo">Configura los insumos que consume este producto por unidad vendida.</p>
+
+{% if receta %}
+<table class="tabla">
+    <thead>
+        <tr>
+            <th>Insumo</th>
+            <th>Cantidad por unidad vendida</th>
+            <th>Unidad</th>
+            <th class="col-acciones">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for fila in receta %}
+        <tr>
+            <td>{{ fila.insumos.nombre }}</td>
+            <td>
+                <form method="post" class="form-inline"
+                      action="{{ url_for('recetas.editar_insumo', producto_id=producto.id, linea_id=fila.id) }}">
+                    <input type="number" name="cantidad_consumo" value="{{ fila.cantidad_consumo }}"
+                           step="0.001" min="0.001" required style="width: 110px;"
+                           aria-label="Cantidad de consumo de {{ fila.insumos.nombre }}">
+                    <button type="submit" class="btn btn-sm btn-secondary">Guardar</button>
+                </form>
+            </td>
+            <td>{{ fila.insumos.unidad }}</td>
+            <td class="col-acciones">
+                <form method="post" class="form-inline"
+                      action="{{ url_for('recetas.eliminar_insumo', producto_id=producto.id, linea_id=fila.id) }}"
+                      onsubmit="return confirm('¿Quitar «{{ fila.insumos.nombre }}» de esta receta?');">
+                    <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<form method="post" class="form-inline"
+      action="{{ url_for('recetas.eliminar_receta', producto_id=producto.id) }}"
+      onsubmit="return confirm('¿Eliminar la receta completa de «{{ producto.nombre }}»? El producto seguirá existiendo, pero venderlo ya no descontará stock.');">
+    <button type="submit" class="btn btn-danger">Eliminar receta completa</button>
+</form>
+{% else %}
+<p class="vacio">Este producto todavía no tiene insumos en su receta.</p>
+{% endif %}
+
+<form method="post"
+      action="{{ url_for('recetas.agregar_insumo', producto_id=producto.id) }}"
+      class="form-inline">
+    <h3>Agregar insumo a la receta</h3>
+
+    {% if insumos_disponibles %}
+    <label for="insumo_id">Insumo</label>
+    <select name="insumo_id" id="insumo_id" required>
+        {% for insumo in insumos_disponibles %}
+        <option value="{{ insumo.id }}">{{ insumo.nombre }} ({{ insumo.unidad }})</option>
+        {% endfor %}
+    </select>
+
+    <label for="cantidad_consumo">Cantidad de consumo</label>
+    <input type="number" name="cantidad_consumo" id="cantidad_consumo"
+           step="0.001" min="0.001" required>
+
+    <button type="submit" class="btn btn-success">Agregar</button>
+    {% else %}
+    <p class="vacio">
+        No quedan insumos disponibles: todos los del catálogo ya están en esta receta.
+    </p>
+    {% endif %}
+</form>
+{% endblock %}
