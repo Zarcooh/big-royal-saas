@@ -257,12 +257,12 @@ plantilla de casos de uso del equipo.
 **Flujos alternos**
 
 - **7.1.** Si el pedido está vacío, el sistema solicita agregar al menos un producto.
-- **8.1.** Si algún producto no tiene receta, el sistema avisa y ofrece continuar; al confirmar, esa parte se registra sin descontar stock.
+- **8.1.** Si algún producto no tiene receta configurada, el sistema **rechaza toda la venta** y avisa que ese producto no se puede vender hasta definir su receta (no hay opción de continuar). Un producto solo es vendible si tiene receta, para que toda venta descuente stock.
 - **8.2.** Si falta stock de algún insumo, no se registra nada y el sistema avisa "stock insuficiente".
 
 **Condiciones**
 
-- **Pre-condiciones:** sesión con rol Cajero (o Administrador); existen productos registrados.
+- **Pre-condiciones:** sesión con rol Cajero (o Administrador); existen productos **con receta** registrados.
 - **Post-condiciones:** la venta y su detalle quedan registrados y el stock actualizado; ante cualquier error, no cambia nada (operación atómica, RNF-REL-01).
 
 ---
@@ -533,6 +533,10 @@ plantilla de casos de uso del equipo.
   venta multi-ítem con descuento atómico de stock (CU-15 / CU-16).
 - **Migración 009** — `recetas_update_admin`: política RLS de UPDATE sobre
   `recetas` para poder editar cantidades respetando el aislamiento RN03 (CU-12).
+- **Migración 010** — `registrar_venta_multiple` (nueva firma sin el parámetro
+  de "confirmar sin receta"): la venta **exige** que todos los productos tengan
+  receta; si alguno no la tiene, se rechaza el pedido completo. Así toda venta
+  descuenta stock y no hay forma de vender algo que no lo controle (CU-15).
 - **CRUD de productos (CU-22..25):** no necesitó migración; las políticas RLS de
   INSERT/UPDATE/DELETE sobre `productos` para el Administrador ya existían desde
   la migración 004, y el borrado en cascada de la receta ya estaba en el esquema.

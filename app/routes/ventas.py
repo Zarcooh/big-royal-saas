@@ -49,6 +49,11 @@ ERRORES_RPC = {
     ),
     "PRODUCTO_NO_ENCONTRADO": ("Algún producto del pedido ya no existe.", "danger"),
     "CANTIDAD_INVALIDA": ("Las cantidades deben ser mayores que cero.", "danger"),
+    "PRODUCTO_SIN_RECETA": (
+        "Algún producto del pedido no tiene receta configurada y no se puede "
+        "vender. Quítalo del pedido o pide al Administrador que le defina su receta.",
+        "danger",
+    ),
     "CARRITO_VACIO": ("El pedido no tiene productos.", "warning"),
     "ROL_NO_AUTORIZADO": ("Tu rol no puede registrar ventas.", "danger"),
     "USUARIO_SIN_PERFIL": ("Tu usuario no tiene un restaurante asignado.", "danger"),
@@ -83,9 +88,6 @@ def _guardar_carrito(carrito: dict) -> None:
     else:
         # Un carrito vacío y "sin carrito" son el mismo estado; no dejamos basura.
         session.pop("carrito", None)
-    # Cambiar el pedido invalida cualquier confirmación pendiente: lo que el
-    # Cajero autorizó vender sin receta era el pedido anterior, no este.
-    session.pop("venta_sin_receta", None)
 
 
 def _productos_con_receta(restaurante_id: str):
@@ -202,9 +204,6 @@ def registrar():
         productos=productos,
         lineas=lineas,
         total=sum(linea["subtotal"] for linea in lineas),
-        # Pedido con algún producto sin receta, a la espera de que el Cajero
-        # confirme (flujo alterno 2.1).
-        pendiente=session.get("venta_sin_receta"),
         resumen=resumen,
     )
 
@@ -302,9 +301,6 @@ def confirmar():
         flash("Agrega al menos un producto al pedido.", "warning")
         return redirect(url_for("ventas.registrar"))
 
-    # El Cajero ya vio la alerta de "producto sin receta" y decidió continuar.
-    confirmar_sin_receta = request.form.get("confirmar_sin_receta") == "1"
-
     items = [
         {"producto_id": producto_id, "cantidad": cantidad}
         for producto_id, cantidad in carrito.items()
@@ -313,29 +309,14 @@ def confirmar():
     try:
         respuesta = (
             get_supabase_usuario()
-            .rpc(
-                "registrar_venta_multiple",
-                {
-                    "p_items": items,
-                    "p_confirmar_sin_receta": confirmar_sin_receta,
-                },
-            )
+            .rpc("registrar_venta_multiple", {"p_items": items})
             .execute()
         )
     except Exception as e:
         mensaje = str(e)
 
-        # Flujo alterno 2.1: algún producto no tiene receta. No es un error: se
-        # avisa al Cajero y se le ofrece continuar, que es lo que pide el CU-06.
-        if "PRODUCTO_SIN_RECETA" in mensaje:
-            session["venta_sin_receta"] = True
-            flash(
-                "Algún producto del pedido no tiene receta configurada: esa parte "
-                "se registrará sin descontar stock. Confirma si quieres continuar.",
-                "warning",
-            )
-            return redirect(url_for("ventas.registrar"))
-
+        # Un producto sin receta bloquea la venta completa: no se puede vender
+        # algo que no descuente stock (regla reforzada en la migración 010).
         for clave, (texto, categoria) in ERRORES_RPC.items():
             if clave in mensaje:
                 flash(texto, categoria)

@@ -87,7 +87,7 @@
                 <td>
                     <strong>{{ linea.nombre }}</strong>
                     {% if linea.sin_receta %}
-                    <span class="stock-badge badge-danger">sin receta</span>
+                    <span class="stock-badge badge-danger">sin receta — no vendible</span>
                     {% endif %}
                 </td>
                 <td>S/ {{ "%.2f"|format(linea.precio) }}</td>
@@ -119,20 +119,6 @@
             </tr>
         </tfoot>
     </table>
-
-    {% if pendiente %}
-    {# CU-06, flujo alterno 2.1: la base rechazó el pedido por falta de receta #}
-    <div class="nota">
-        <p>
-            Algún producto del pedido <strong>no tiene receta configurada</strong>, así
-            que esa parte quedará registrada sin descontar stock de ningún insumo.
-        </p>
-        <form method="post" action="{{ url_for('ventas.confirmar') }}" class="form-inline">
-            <input type="hidden" name="confirmar_sin_receta" value="1">
-            <button type="submit" class="btn btn-primary">Continuar de todos modos</button>
-        </form>
-    </div>
-    {% endif %}
 
     <div class="form-inline">
         <form method="post" action="{{ url_for('ventas.confirmar') }}" class="form-inline">
