@@ -1,18 +1,28 @@
 """
-CU-06: Registrar Venta (auto-descuento de stock)
-Blueprint de ventas — el Cajero registra la venta de un producto y el sistema
-descuenta automáticamente el stock de los insumos según la receta configurada.
+CU-06: Registrar Venta (carrito + auto-descuento de stock)
+Blueprint de ventas — el Cajero arma un pedido con varios productos y, al
+confirmarlo, el sistema descuenta automáticamente el stock de los insumos
+según la receta de cada producto.
 
 El descuento NO se hace desde aquí. Toda la operación (venta + detalle +
 descuento de cada insumo + auditoría) ocurre dentro de la RPC transaccional
-`registrar_venta` (ver migrations/006), tal como exige el RF-INV-40. Si falla
-el descuento de un solo insumo, la base revierte la venta entera (flujo alterno
-4.1 / RNF-REL-01): nunca queda media venta ni un inventario descuadrado.
+`registrar_venta_multiple` (ver migrations/008), tal como exige el RF-INV-40.
+Si falla el descuento de un solo insumo, la base revierte la venta entera
+(flujo alterno 4.1 / RNF-REL-01): nunca queda medio pedido cobrado ni un
+inventario descuadrado.
+
+EL CARRITO VIVE EN LA SESIÓN, no en el navegador: se guarda solo
+{producto_id: cantidad}. El nombre, el precio y la receta se releen de la
+base en cada render, así que un carrito abierto no puede cobrar el precio de
+ayer ni mostrar un stock viejo. El precio autoritativo, de todos modos, lo
+pone la RPC.
 
 RN03: el restaurante NO se toma del formulario ni de la sesión de Flask, sino
 del token del usuario dentro de la RPC. Por eso aquí se usa
 `get_supabase_usuario()` y no el cliente singleton.
 """
+
+from uuid import UUID
 
 from flask import (
     Blueprint,
@@ -33,16 +43,49 @@ ventas_bp = Blueprint("ventas", __name__, url_prefix="/ventas")
 # trata como fallo genérico: no exponemos detalles internos de la base.
 ERRORES_RPC = {
     "STOCK_INSUFICIENTE": (
-        "No hay stock suficiente de algún insumo para esa cantidad. "
+        "No hay stock suficiente de algún insumo para ese pedido. "
         "No se registró la venta.",
         "danger",
     ),
-    "PRODUCTO_NO_ENCONTRADO": ("El producto seleccionado no existe.", "danger"),
-    "CANTIDAD_INVALIDA": ("La cantidad debe ser mayor que cero.", "danger"),
+    "PRODUCTO_NO_ENCONTRADO": ("Algún producto del pedido ya no existe.", "danger"),
+    "CANTIDAD_INVALIDA": ("Las cantidades deben ser mayores que cero.", "danger"),
+    "CARRITO_VACIO": ("El pedido no tiene productos.", "warning"),
     "ROL_NO_AUTORIZADO": ("Tu rol no puede registrar ventas.", "danger"),
     "USUARIO_SIN_PERFIL": ("Tu usuario no tiene un restaurante asignado.", "danger"),
     "NO_AUTENTICADO": ("Tu sesión expiró. Vuelve a iniciar sesión.", "warning"),
 }
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _es_uuid(valor: str) -> bool:
+    try:
+        UUID(str(valor))
+        return True
+    except (ValueError, AttributeError, TypeError):
+        return False
+
+
+def _carrito() -> dict:
+    """El pedido en curso: {producto_id: cantidad}."""
+    return session.get("carrito", {})
+
+
+def _guardar_carrito(carrito: dict) -> None:
+    """
+    Persiste el carrito. Se reasigna la clave entera en vez de mutar el dict
+    en sitio porque Flask solo detecta el cambio de la sesión al asignar.
+    """
+    if carrito:
+        session["carrito"] = carrito
+    else:
+        # Un carrito vacío y "sin carrito" son el mismo estado; no dejamos basura.
+        session.pop("carrito", None)
+    # Cambiar el pedido invalida cualquier confirmación pendiente: lo que el
+    # Cajero autorizó vender sin receta era el pedido anterior, no este.
+    session.pop("venta_sin_receta", None)
 
 
 def _productos_con_receta(restaurante_id: str):
@@ -94,58 +137,186 @@ def _productos_con_receta(restaurante_id: str):
     return productos
 
 
+def _lineas_del_carrito(productos: list, carrito: dict):
+    """
+    Cruza el carrito de la sesión con el catálogo recién leído de la base.
+
+    Devuelve (líneas, huérfanos). Un producto que el Administrador borró
+    mientras el Cajero armaba el pedido queda como huérfano: se retira del
+    carrito en vez de dejar que la RPC rechace el pedido entero con
+    PRODUCTO_NO_ENCONTRADO sin decir cuál era.
+    """
+    catalogo = {p["id"]: p for p in productos}
+    lineas = []
+    huerfanos = []
+
+    for producto_id, cantidad in carrito.items():
+        producto = catalogo.get(producto_id)
+        if producto is None:
+            huerfanos.append(producto_id)
+            continue
+        precio = producto.get("precio") or 0
+        lineas.append(
+            {
+                "producto_id": producto_id,
+                "nombre": producto["nombre"],
+                "precio": precio,
+                "cantidad": cantidad,
+                "subtotal": precio * cantidad,
+                "sin_receta": not producto["receta"],
+            }
+        )
+
+    return lineas, huerfanos
+
+
+# ---------------------------------------------------------------------------
+# PANTALLA DE VENTA (CU-06, pasos 1-2)
+# ---------------------------------------------------------------------------
+
 @ventas_bp.route("/", methods=["GET"])
 @login_required
 def registrar():
-    """Muestra el catálogo con su receta y el formulario de venta (CU-06, pasos 1-2)."""
+    """Muestra el catálogo con su receta y el detalle del pedido en curso."""
     productos = _productos_con_receta(get_current_restaurante_id())
 
-    # Resumen de la venta recién hecha, si venimos de un POST correcto.
+    carrito = _carrito()
+    lineas, huerfanos = _lineas_del_carrito(productos, carrito)
+
+    if huerfanos:
+        for producto_id in huerfanos:
+            carrito.pop(producto_id, None)
+        _guardar_carrito(carrito)
+        flash(
+            "Se quitaron del pedido productos que ya no están en el catálogo.",
+            "warning",
+        )
+
+    # Comprobante de la venta recién hecha, si venimos de un POST correcto.
     # Se guarda en la sesión y se consume aquí para poder redirigir tras el POST
     # (patrón Post/Redirect/Get) y que recargar la página no repita la venta.
     resumen = session.pop("ultima_venta", None)
 
-    # Venta de un producto sin receta, a la espera de que el Cajero confirme.
-    pendiente = session.get("venta_sin_receta")
-
     return render_template(
         "ventas/registrar.html",
         productos=productos,
+        lineas=lineas,
+        total=sum(linea["subtotal"] for linea in lineas),
+        # Pedido con algún producto sin receta, a la espera de que el Cajero
+        # confirme (flujo alterno 2.1).
+        pendiente=session.get("venta_sin_receta"),
         resumen=resumen,
-        pendiente=pendiente,
     )
 
 
-@ventas_bp.route("/", methods=["POST"])
-@login_required
-def confirmar():
-    """
-    Registra la venta y dispara el auto-descuento (CU-06, pasos 3-6).
+# ---------------------------------------------------------------------------
+# CARRITO
+# ---------------------------------------------------------------------------
 
-    La validación autoritativa (tenant, stock, receta) vive en la RPC. Aquí solo
-    se filtran entradas obviamente malas y se traduce el error al Cajero.
-    """
+@ventas_bp.route("/carrito/agregar", methods=["POST"])
+@login_required
+def agregar_al_carrito():
+    """Suma un producto al pedido en curso (o incrementa su cantidad)."""
     producto_id = request.form.get("producto_id", "").strip()
     cantidad = request.form.get("cantidad", type=float)
-    # El Cajero ya vio la alerta de "producto sin receta" y decidió continuar.
-    confirmar_sin_receta = request.form.get("confirmar_sin_receta") == "1"
 
-    if not producto_id:
-        flash("Debes seleccionar un producto.", "danger")
+    if not _es_uuid(producto_id):
+        flash("Debes seleccionar un producto válido.", "danger")
         return redirect(url_for("ventas.registrar"))
 
     if cantidad is None or cantidad <= 0:
         flash("La cantidad debe ser un número mayor que cero.", "danger")
         return redirect(url_for("ventas.registrar"))
 
+    carrito = _carrito()
+    carrito[producto_id] = carrito.get(producto_id, 0) + cantidad
+    _guardar_carrito(carrito)
+
+    flash("Producto agregado al pedido.", "success")
+    return redirect(url_for("ventas.registrar"))
+
+
+@ventas_bp.route("/carrito/actualizar", methods=["POST"])
+@login_required
+def actualizar_carrito():
+    """Fija la cantidad de una línea del pedido."""
+    producto_id = request.form.get("producto_id", "").strip()
+    cantidad = request.form.get("cantidad", type=float)
+
+    carrito = _carrito()
+    if not _es_uuid(producto_id) or producto_id not in carrito:
+        flash("Ese producto no está en el pedido.", "warning")
+        return redirect(url_for("ventas.registrar"))
+
+    if cantidad is None or cantidad <= 0:
+        flash("La cantidad debe ser un número mayor que cero.", "danger")
+        return redirect(url_for("ventas.registrar"))
+
+    carrito[producto_id] = cantidad
+    _guardar_carrito(carrito)
+
+    flash("Cantidad actualizada.", "success")
+    return redirect(url_for("ventas.registrar"))
+
+
+@ventas_bp.route("/carrito/quitar", methods=["POST"])
+@login_required
+def quitar_del_carrito():
+    """Saca un producto del pedido en curso."""
+    producto_id = request.form.get("producto_id", "").strip()
+
+    carrito = _carrito()
+    if carrito.pop(producto_id, None) is None:
+        flash("Ese producto no está en el pedido.", "warning")
+    else:
+        _guardar_carrito(carrito)
+        flash("Producto quitado del pedido.", "success")
+
+    return redirect(url_for("ventas.registrar"))
+
+
+@ventas_bp.route("/carrito/vaciar", methods=["POST"])
+@login_required
+def vaciar_carrito():
+    """Descarta el pedido completo sin registrarlo."""
+    _guardar_carrito({})
+    flash("Pedido cancelado.", "info")
+    return redirect(url_for("ventas.registrar"))
+
+
+# ---------------------------------------------------------------------------
+# CONFIRMAR LA COMPRA (CU-06, pasos 3-6)
+# ---------------------------------------------------------------------------
+
+@ventas_bp.route("/", methods=["POST"])
+@login_required
+def confirmar():
+    """
+    Registra la venta del carrito completo y dispara el auto-descuento.
+
+    La validación autoritativa (tenant, precios, stock, receta) vive en la RPC.
+    Aquí solo se filtran entradas obviamente malas y se traduce el error.
+    """
+    carrito = _carrito()
+    if not carrito:
+        flash("Agrega al menos un producto al pedido.", "warning")
+        return redirect(url_for("ventas.registrar"))
+
+    # El Cajero ya vio la alerta de "producto sin receta" y decidió continuar.
+    confirmar_sin_receta = request.form.get("confirmar_sin_receta") == "1"
+
+    items = [
+        {"producto_id": producto_id, "cantidad": cantidad}
+        for producto_id, cantidad in carrito.items()
+    ]
+
     try:
         respuesta = (
             get_supabase_usuario()
             .rpc(
-                "registrar_venta",
+                "registrar_venta_multiple",
                 {
-                    "p_producto_id": producto_id,
-                    "p_cantidad": cantidad,
+                    "p_items": items,
                     "p_confirmar_sin_receta": confirmar_sin_receta,
                 },
             )
@@ -154,16 +325,13 @@ def confirmar():
     except Exception as e:
         mensaje = str(e)
 
-        # Flujo alterno 2.1: el producto no tiene receta. No es un error: se
+        # Flujo alterno 2.1: algún producto no tiene receta. No es un error: se
         # avisa al Cajero y se le ofrece continuar, que es lo que pide el CU-06.
         if "PRODUCTO_SIN_RECETA" in mensaje:
-            session["venta_sin_receta"] = {
-                "producto_id": producto_id,
-                "cantidad": cantidad,
-            }
+            session["venta_sin_receta"] = True
             flash(
-                "Este producto no tiene receta configurada: la venta se registrará "
-                "sin descontar stock. Confirma si quieres continuar.",
+                "Algún producto del pedido no tiene receta configurada: esa parte "
+                "se registrará sin descontar stock. Confirma si quieres continuar.",
                 "warning",
             )
             return redirect(url_for("ventas.registrar"))
@@ -177,55 +345,83 @@ def confirmar():
 
         return redirect(url_for("ventas.registrar"))
 
-    session.pop("venta_sin_receta", None)
-
     # Paso 6: confirmar la venta y mostrar el stock ya actualizado.
-    session["ultima_venta"] = _resumen_de(respuesta.data, producto_id, cantidad)
+    session["ultima_venta"] = _resumen_de(respuesta.data)
+    _guardar_carrito({})
 
     flash("Venta registrada y stock actualizado.", "success")
     return redirect(url_for("ventas.registrar"))
 
 
-def _resumen_de(venta_id, producto_id: str, cantidad: float) -> dict:
-    """Datos de la venta recién registrada, con el stock ya descontado."""
-    supabase = get_supabase_usuario()
-    restaurante_id = get_current_restaurante_id()
+def _resumen_de(venta_id) -> dict:
+    """
+    Comprobante de la venta recién registrada, leído de la base.
 
-    producto = (
-        supabase.table("productos")
-        .select("nombre, precio")
-        .eq("id", producto_id)
-        .eq("restaurante_id", restaurante_id)
+    Se relee en vez de reconstruirse desde el carrito para que refleje lo que
+    realmente quedó grabado: los precios que aplicó la RPC y el stock ya
+    descontado. Los insumos salen del log de auditoría que la propia RPC
+    escribió para esta venta, así que el comprobante y la auditoría no pueden
+    contradecirse.
+    """
+    supabase = get_supabase_usuario()
+
+    venta = (
+        supabase.table("ventas")
+        .select("total, created_at")
+        .eq("id", venta_id)
         .execute()
         .data
     )
-    producto = producto[0] if producto else {"nombre": "(desconocido)", "precio": 0}
+    venta = venta[0] if venta else {"total": 0, "created_at": ""}
 
-    receta = (
-        supabase.table("recetas")
-        .select("cantidad_consumo, insumos(nombre, unidad, stock_actual)")
-        .eq("producto_id", producto_id)
+    detalle = (
+        supabase.table("detalle_ventas")
+        .select("cantidad, precio_unitario, productos(nombre)")
+        .eq("venta_id", venta_id)
+        .execute()
+        .data
+        or []
+    )
+
+    lineas = []
+    for fila in detalle:
+        producto = fila.get("productos") or {}
+        lineas.append(
+            {
+                "producto": producto.get("nombre", "(producto eliminado)"),
+                "cantidad": fila["cantidad"],
+                "precio_unitario": fila["precio_unitario"],
+                "subtotal": fila["cantidad"] * fila["precio_unitario"],
+            }
+        )
+    lineas.sort(key=lambda l: l["producto"])
+
+    movimientos = (
+        supabase.table("auditoria_inventario")
+        .select("cantidad_afectada, insumos(nombre, unidad, stock_actual)")
+        .eq("motivo", f"Venta {venta_id}")
         .execute()
         .data
         or []
     )
 
     insumos = []
-    for linea in receta:
-        insumo = linea.get("insumos") or {}
+    for movimiento in movimientos:
+        insumo = movimiento.get("insumos") or {}
         insumos.append(
             {
                 "nombre": insumo.get("nombre", "(insumo eliminado)"),
                 "unidad": insumo.get("unidad", ""),
-                "descontado": linea["cantidad_consumo"] * cantidad,
+                "descontado": abs(movimiento["cantidad_afectada"]),
                 "stock_actual": insumo.get("stock_actual", 0),
             }
         )
+    insumos.sort(key=lambda i: i["nombre"])
 
     return {
-        "venta_id": venta_id,
-        "producto": producto["nombre"],
-        "cantidad": cantidad,
-        "total": (producto.get("precio") or 0) * cantidad,
+        "venta_id": str(venta_id),
+        "fecha": (venta.get("created_at") or "")[:19].replace("T", " "),
+        "total": venta.get("total") or 0,
+        "lineas": lineas,
         "insumos": insumos,
     }

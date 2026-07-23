@@ -5,23 +5,47 @@
 {% block content %}
 <h1>Registrar Venta</h1>
 <p class="subtitulo">
-    Al confirmar la venta, el sistema descuenta automáticamente el stock de los
-    insumos según la receta del producto.
+    Arma el pedido agregando productos al detalle. Al confirmar la compra, el
+    sistema descuenta automáticamente el stock de los insumos según la receta
+    de cada producto.
 </p>
 
 {% if resumen %}
 <div class="resumen-venta">
-    <h3>Venta registrada</h3>
+    <h3>✓ Venta registrada</h3>
     <p>
-        {{ resumen.cantidad }} × <strong>{{ resumen.producto }}</strong>
+        Comprobante <code>{{ resumen.venta_id[:8] }}</code>
+        {% if resumen.fecha %}— {{ resumen.fecha }}{% endif %}
         — Total: <strong>S/ {{ "%.2f"|format(resumen.total) }}</strong>
     </p>
 
-    {% if resumen.insumos %}
     <table class="tabla">
         <thead>
             <tr>
-                <th>Insumo descontado</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio unit.</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for linea in resumen.lineas %}
+            <tr>
+                <td>{{ linea.producto }}</td>
+                <td>{{ linea.cantidad }}</td>
+                <td>S/ {{ "%.2f"|format(linea.precio_unitario) }}</td>
+                <td>S/ {{ "%.2f"|format(linea.subtotal) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if resumen.insumos %}
+    <h4>Insumos descontados</h4>
+    <table class="tabla">
+        <thead>
+            <tr>
+                <th>Insumo</th>
                 <th>Cantidad</th>
                 <th>Stock actual</th>
             </tr>
@@ -37,26 +61,97 @@
         </tbody>
     </table>
     {% else %}
-    <p class="vacio">Este producto no tiene receta: no se descontó ningún insumo.</p>
+    <p class="vacio">Ningún producto del pedido tenía receta: no se descontó stock.</p>
     {% endif %}
 </div>
 {% endif %}
 
-{% if pendiente %}
-<div class="nota">
-    <p>
-        El producto seleccionado <strong>no tiene receta configurada</strong>, así que
-        la venta quedará registrada sin descontar stock de ningún insumo.
+{# ── Detalle del pedido (carrito) ── #}
+<div class="carrito">
+    <h2>🛒 Detalle del pedido</h2>
+
+    {% if lineas %}
+    <table class="tabla">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Precio unit.</th>
+                <th>Cantidad</th>
+                <th>Subtotal</th>
+                <th class="col-acciones">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for linea in lineas %}
+            <tr>
+                <td>
+                    <strong>{{ linea.nombre }}</strong>
+                    {% if linea.sin_receta %}
+                    <span class="stock-badge badge-danger">sin receta</span>
+                    {% endif %}
+                </td>
+                <td>S/ {{ "%.2f"|format(linea.precio) }}</td>
+                <td>
+                    <form method="post" class="form-inline"
+                          action="{{ url_for('ventas.actualizar_carrito') }}">
+                        <input type="hidden" name="producto_id" value="{{ linea.producto_id }}">
+                        <input type="number" name="cantidad" value="{{ linea.cantidad }}"
+                               step="1" min="1" required style="width: 80px;"
+                               aria-label="Cantidad de {{ linea.nombre }}">
+                        <button type="submit" class="btn btn-sm btn-secondary">Actualizar</button>
+                    </form>
+                </td>
+                <td><strong>S/ {{ "%.2f"|format(linea.subtotal) }}</strong></td>
+                <td class="col-acciones">
+                    <form method="post" class="form-inline"
+                          action="{{ url_for('ventas.quitar_del_carrito') }}">
+                        <input type="hidden" name="producto_id" value="{{ linea.producto_id }}">
+                        <button type="submit" class="btn btn-sm btn-danger">Quitar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="3" style="text-align: right;">Total del pedido</th>
+                <th colspan="2">S/ {{ "%.2f"|format(total) }}</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    {% if pendiente %}
+    {# CU-06, flujo alterno 2.1: la base rechazó el pedido por falta de receta #}
+    <div class="nota">
+        <p>
+            Algún producto del pedido <strong>no tiene receta configurada</strong>, así
+            que esa parte quedará registrada sin descontar stock de ningún insumo.
+        </p>
+        <form method="post" action="{{ url_for('ventas.confirmar') }}" class="form-inline">
+            <input type="hidden" name="confirmar_sin_receta" value="1">
+            <button type="submit" class="btn btn-primary">Continuar de todos modos</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="form-inline">
+        <form method="post" action="{{ url_for('ventas.confirmar') }}" class="form-inline">
+            <button type="submit" class="btn btn-primary">✓ Confirmar compra</button>
+        </form>
+        <form method="post" action="{{ url_for('ventas.vaciar_carrito') }}" class="form-inline"
+              onsubmit="return confirm('¿Descartar el pedido completo?');">
+            <button type="submit" class="btn btn-secondary">Cancelar pedido</button>
+        </form>
+    </div>
+    {% else %}
+    <p class="vacio">
+        El pedido está vacío. Agrega productos desde el catálogo de abajo.
     </p>
-    <form method="post" action="{{ url_for('ventas.confirmar') }}" class="form-inline">
-        <input type="hidden" name="producto_id" value="{{ pendiente.producto_id }}">
-        <input type="hidden" name="cantidad" value="{{ pendiente.cantidad }}">
-        <input type="hidden" name="confirmar_sin_receta" value="1">
-        <button type="submit" class="btn">Continuar de todos modos</button>
-        <a class="btn btn-secundario" href="{{ url_for('ventas.registrar') }}">Cancelar</a>
-    </form>
+    {% endif %}
 </div>
-{% endif %}
+
+{# ── Catálogo ── #}
+<h2>Catálogo</h2>
 
 {% if productos %}
 <table class="tabla">
@@ -92,17 +187,17 @@
             </td>
             <td>
                 <form method="post"
-                      action="{{ url_for('ventas.confirmar') }}"
+                      action="{{ url_for('ventas.agregar_al_carrito') }}"
                       class="form-inline"
-                      id="venta-{{ producto.id }}">
+                      id="agregar-{{ producto.id }}">
                     <input type="hidden" name="producto_id" value="{{ producto.id }}">
                     <input type="number" name="cantidad" value="1"
                            step="1" min="1" required aria-label="Cantidad">
                 </form>
             </td>
             <td>
-                <button type="submit" form="venta-{{ producto.id }}" class="btn">
-                    Vender
+                <button type="submit" form="agregar-{{ producto.id }}" class="btn btn-success">
+                    + Agregar
                 </button>
             </td>
         </tr>
