@@ -78,58 +78,176 @@ siguiendo el mismo patrón que los de Insumos (CU-02..05).
 ## 2. Casos de uso EXISTENTES — redacción actualizada / implementados
 
 ### CU-02. Listar Insumos
-- **Nuevo:** buscador por nombre en el catálogo.
+- **Actor:** Administrador.
+- **Descripción:** Lista los insumos del restaurante con su stock actual y
+  mínimo, resaltando los que están en o bajo el mínimo, con buscador por nombre.
+- **Precondición:** El Administrador ha iniciado sesión.
+- **Flujo básico:**
+  1. El Administrador abre "Insumos".
+  2. El sistema lista los insumos de su restaurante ordenados por nombre y marca
+     en rojo los que tienen stock ≤ stock mínimo.
+  3. (Opcional) escribe un texto y pulsa "Buscar"; el sistema filtra por nombre.
+     "Limpiar" restaura la lista completa.
+- **Reglas:** RN03 (solo insumos del restaurante); el filtro por nombre se
+  aplica después del filtro de tenant.
 - **RF propuesto:** El sistema permite filtrar el catálogo de insumos por nombre
   (búsqueda parcial, sin distinguir mayúsculas).
 
 ### CU-06. Listar Recetas
-- **Redacción actualizada:** ahora se presenta como el catálogo de productos
-  (CU-22) desde el cual, por cada fila, se gestiona la receta del producto.
+- **Actor:** Administrador.
+- **Descripción:** Se presenta como el catálogo de productos (CU-22): punto de
+  entrada para ver y gestionar la receta de cada producto.
+- **Precondición:** El Administrador ha iniciado sesión.
+- **Flujo básico:**
+  1. El Administrador abre "Recetas".
+  2. El sistema lista los productos con su precio y el estado de su receta
+     (cuántos insumos tiene o "sin receta").
+  3. Pulsa "Gestionar receta" en un producto para ver y modificar su receta
+     (CU-08, CU-10, CU-11, CU-12).
+- **Reglas:** RN03.
 
 ### CU-08. Eliminar Receta
-- **Implementado:** desde "Gestionar receta", botón "Eliminar receta completa".
-  Borra todas las líneas; el producto sigue existiendo (queda vendible sin
-  descuento automático de stock, caso "producto sin receta" del CU-15).
+- **Actor:** Administrador.
+- **Descripción:** Elimina todas las líneas de la receta de un producto, sin
+  borrar el producto.
+- **Precondición:** El producto pertenece al restaurante en sesión y tiene al
+  menos un insumo en su receta.
+- **Flujo básico:**
+  1. En "Gestionar receta", el Administrador pulsa "Eliminar receta completa" y
+     confirma.
+  2. El sistema borra todas las líneas de la receta.
+  3. El producto sigue existiendo, pero venderlo ya no descuenta stock (queda
+     como caso "producto sin receta" del CU-15).
+- **Reglas:** RN03 (el tenant se valida a través del producto).
 
-### CU-10 / CU-11 / CU-12. Agregar / Eliminar / Editar Insumo de Receta
-- **Implementados** en la pantalla "Gestionar receta":
-  - Agregar insumo con su cantidad de consumo (valida duplicados, RF-INV-10).
-  - Eliminar una línea de la receta.
-  - Editar la cantidad de consumo de una línea.
-- **Requirió cambio en BD:** la política RLS de UPDATE sobre `recetas` no existía;
-  sin ella el editar cantidad fallaba en silencio. Se agregó
-  `recetas_update_admin` (**migración 009**).
+### CU-10. Agregar Insumo a Receta
+- **Actor:** Administrador.
+- **Descripción:** Agrega un insumo a la receta de un producto con su cantidad
+  de consumo por unidad vendida.
+- **Precondición:** El producto pertenece al restaurante y queda al menos un
+  insumo no incluido en su receta.
+- **Flujo básico:**
+  1. En "Gestionar receta", el Administrador elige un insumo del desplegable e
+     ingresa la cantidad de consumo.
+  2. Pulsa "Agregar".
+  3. El sistema valida y agrega la línea a la receta.
+- **Flujo alterno:** si el insumo ya está en la receta, el sistema avisa y no lo
+  duplica (RF-INV-10).
+- **Validaciones:** el insumo debe existir y ser del restaurante (RF-INV-09); la
+  cantidad de consumo debe ser mayor que cero.
+
+### CU-11. Eliminar Insumo de Receta
+- **Actor:** Administrador.
+- **Descripción:** Quita un insumo de la receta de un producto.
+- **Precondición:** El insumo forma parte de la receta del producto.
+- **Flujo básico:**
+  1. En "Gestionar receta", el Administrador pulsa "Eliminar" en la fila del
+     insumo y confirma.
+  2. El sistema quita esa línea de la receta.
+- **Reglas:** RN03 (la línea se acota al producto ya validado).
+
+### CU-12. Editar Insumo de Receta
+- **Actor:** Administrador.
+- **Descripción:** Modifica la cantidad de consumo de un insumo ya presente en
+  la receta.
+- **Precondición:** El insumo forma parte de la receta del producto.
+- **Flujo básico:**
+  1. En "Gestionar receta", el Administrador cambia la cantidad en la fila del
+     insumo y pulsa "Guardar".
+  2. El sistema actualiza la cantidad de consumo.
+- **Validaciones:** la cantidad debe ser mayor que cero.
+- **Nota BD:** requirió agregar la política RLS de UPDATE sobre `recetas`
+  (`recetas_update_admin`, **migración 009**); sin ella la edición fallaba en
+  silencio.
 
 ### CU-15. Registrar Venta
-- **Redacción actualizada:** el Cajero arma un pedido con **uno o varios
-  productos** (carrito en sesión), ajusta cantidades y lo confirma en un solo
-  comprobante.
-- **Atomicidad:** toda la venta corre en la RPC `registrar_venta_multiple`
-  (**migración 008**): consolida el consumo por insumo y descuenta stock; si
-  falta stock de cualquier ítem, no se registra nada (RNF-REL-01). Mantiene el
-  aviso de "producto sin receta".
+- **Actor:** Cajero.
+- **Descripción:** El Cajero arma un pedido con **uno o varios productos**
+  (carrito en sesión) y lo confirma en un solo comprobante, disparando el
+  auto-descuento de stock (CU-16).
+- **Precondición:** El Cajero ha iniciado sesión y existen productos.
+- **Flujo básico:**
+  1. El Cajero abre "Registrar Venta".
+  2. En el catálogo indica la cantidad y pulsa "+ Agregar" por cada producto; el
+     ítem se suma al detalle del pedido.
+  3. Ajusta cantidades ("Actualizar") o quita ítems del carrito.
+  4. Pulsa "Confirmar compra".
+  5. El sistema registra la venta, descuenta el stock (CU-16) y muestra el
+     comprobante con el detalle de productos y el stock actualizado.
+- **Flujo alterno 2.1 (producto sin receta):** si algún producto no tiene receta,
+  el sistema avisa y ofrece "Continuar de todos modos"; al confirmar, esa parte
+  se registra sin descontar stock.
+- **Flujo alterno (stock insuficiente):** si falta stock de cualquier insumo, no
+  se registra nada y el sistema avisa.
+- **Reglas:** RN01, RN03 y RNF-REL-01 (todo el carrito es atómico: o pasa la
+  compra entera o no pasa nada).
 - **RF propuesto:** El sistema permite registrar en una sola venta varios
   productos con sus cantidades (venta multi-ítem).
 
 ### CU-16. Actualizar Stock (Auto-descuento)
-- **Implementado** dentro de la misma RPC de venta: descuenta el stock de cada
-  insumo según la receta y deja el registro en `auditoria_inventario`.
+- **Actor:** Sistema (disparado por CU-15).
+- **Descripción:** Dentro de la misma transacción de la venta, descuenta el stock
+  de cada insumo según la receta y registra el movimiento en auditoría.
+- **Precondición:** Se está confirmando una venta (CU-15).
+- **Flujo básico:**
+  1. El sistema consolida el consumo por insumo, sumando lo que aportan todos los
+     productos del carrito.
+  2. Por cada insumo bloquea la fila, verifica que haya stock suficiente,
+     descuenta la cantidad y lo registra en `auditoria_inventario` (cantidad
+     negativa, tipo "Venta").
+  3. Si el stock de algún insumo no alcanza, revierte toda la venta.
+- **Reglas:** RN01 (todo lo vendido descuenta stock), RNF-REL-01 (atomicidad).
 
 ### CU-18. Consultar Dashboard y Reportes
-- **Redacción actualizada:** KPIs en tiempo real (ventas del día, insumos
-  críticos, mermas, ingresos, total de insumos) y acceso a los tres reportes.
+- **Actor:** Administrador.
+- **Descripción:** Muestra KPIs en tiempo real y da acceso a los tres reportes.
+- **Precondición:** El Administrador ha iniciado sesión.
+- **Flujo básico:**
+  1. El Administrador abre "Reportes".
+  2. El sistema muestra los KPIs (ventas del día, insumos críticos, mermas,
+     ingresos y total de insumos).
+  3. El Administrador elige una pestaña (Ventas / Ajustes de inventario / Pedidos
+     a proveedor), fija el rango de fechas y emite el reporte (CU-19/20/21).
+- **Flujo alterno:** si no hay historial de transacciones, el sistema lo avisa y
+  muestra los KPIs en cero.
 
 ### CU-19. Emitir Reporte de Ventas
-- **Implementado** como pestaña: cada venta con el **detalle de productos** del
-  pedido; filtro de fechas y exportación CSV.
+- **Actor:** Administrador.
+- **Descripción:** Lista las ventas de un periodo, cada una con el detalle de
+  productos del pedido.
+- **Precondición:** El Administrador está en "Reportes", pestaña "Ventas".
+- **Flujo básico:**
+  1. Elige el rango de fechas y pulsa "Emitir Reporte".
+  2. El sistema muestra una fila por venta con su detalle de productos
+     (cantidad, precio unitario, subtotal) y el total.
+  3. (Opcional) pulsa "Exportar CSV" para descargar el reporte.
+- **Reglas:** RN03; una fila por venta para no inflar totales al aplanar el
+  detalle.
 
 ### CU-20. Emitir Reporte de Modificaciones de Inventario
-- **Implementado** como pestaña: ajustes manuales con **tipo de operación**
-  (merma, pérdida, ingreso) y **motivo**, excluyendo los movimientos de venta.
+- **Actor:** Administrador.
+- **Descripción:** Lista los ajustes manuales de inventario de un periodo con su
+  tipo y motivo.
+- **Precondición:** El Administrador está en "Reportes", pestaña "Ajustes de
+  inventario".
+- **Flujo básico:**
+  1. Elige el rango de fechas y pulsa "Emitir Reporte".
+  2. El sistema muestra cada ajuste con su tipo de operación (merma, pérdida,
+     ingreso), insumo, cantidad con signo y motivo.
+  3. (Opcional) exporta a CSV.
+- **Reglas:** excluye los movimientos de tipo "Venta" (esos van en el CU-19).
 
 ### CU-21. Emitir Reporte de Proveedores
-- **Implementado** como pestaña: pedidos a proveedor con proveedor, estado e
-  insumos solicitados; filtro de fechas y CSV.
+- **Actor:** Administrador.
+- **Descripción:** Lista los pedidos a proveedor de un periodo con su detalle.
+- **Precondición:** El Administrador está en "Reportes", pestaña "Pedidos a
+  proveedor".
+- **Flujo básico:**
+  1. Elige el rango de fechas y pulsa "Emitir Reporte".
+  2. El sistema muestra una fila por pedido con proveedor, teléfono, estado y los
+     insumos solicitados.
+  3. (Opcional) exporta a CSV.
+- **Reglas:** RN03.
 
 ---
 
