@@ -13,7 +13,7 @@ boundary-control-entity de los demás diagramas del proyecto:
 
 ---
 
-## CU-06 — Listar Recetas
+## CU-06 — Listar Recetas (= CU-22 Listar Productos)
 
 ```mermaid
 sequenceDiagram
@@ -42,10 +42,11 @@ sequenceDiagram
 
 ---
 
-## CU-07 — Gestionar Receta
+## CU-07 — Gestionar Receta (contenedor de CU-08/10/11/12)
 
 Carga de la pantalla única desde la que se realizan las operaciones sobre la
-receta (agregar CU-10, editar CU-12, quitar CU-11, eliminar receta CU-08).
+receta. No es un CU aparte: "Agregar receta" se cubre con CU-10 y "Editar
+receta" con CU-12; aquí solo se muestra la carga de la pantalla.
 
 ```mermaid
 sequenceDiagram
