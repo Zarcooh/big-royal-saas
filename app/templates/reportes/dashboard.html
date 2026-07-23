@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Dashboard y Reportes — Big Royal{% endblock %}
+{% block title %}Reportes — Big Royal{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1>📈 Dashboard y Reportes</h1>
+    <h1>📈 Reportes</h1>
 </div>
 
 {% if sin_historial %}
@@ -47,14 +47,23 @@
     </div>
 </div>
 
-{# ── Submódulo Reportes: filtro por fecha (Flujo Básico paso 3) ── #}
+{% if not sin_historial %}
+{# ── Pestañas: conservan el rango de fechas y si ya se emitió el reporte ── #}
+<div class="tabs">
+    {% for clave, etiqueta in pestanas.items() %}
+    <a class="tab {{ 'tab-activa' if tab == clave else '' }}"
+       href="{{ url_for('dashboard_rpt.index', tab=clave, desde=desde, hasta=hasta, emitido=emitido) }}">
+        {{ etiqueta }}
+    </a>
+    {% endfor %}
+</div>
+
+{# ── Filtro por fecha (Flujo Básico paso 3) ── #}
 <div class="form-card" style="max-width: 100%; margin-bottom: 24px;">
-    <h2 style="margin-bottom: 16px;">📅 Emitir Reporte de Consumo</h2>
-    <p style="color: var(--color-text-muted); margin-bottom: 16px;">
-        Configura las fechas de filtro y haz clic en <strong>"Emitir Reporte"</strong> para visualizar la tabla de consumo (RNF-INV-PER-02).
-    </p>
+    <h2 style="margin-bottom: 16px;">📅 Emitir reporte de {{ pestanas[tab]|replace('🧾 ','')|replace('📦 ','')|replace('🚚 ','')|lower }}</h2>
 
     <form method="POST" action="{{ url_for('dashboard_rpt.generar') }}" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+        <input type="hidden" name="tab" value="{{ tab }}">
         <div class="form-group" style="margin-bottom: 0;">
             <label for="desde">Desde</label>
             <input type="date" id="desde" name="desde" value="{{ desde }}" required>
@@ -63,54 +72,145 @@
             <label for="hasta">Hasta</label>
             <input type="date" id="hasta" name="hasta" value="{{ hasta }}" required>
         </div>
-        <div style="display: flex; gap: 8px;">
-            <button type="submit" class="btn btn-primary">📊 Emitir Reporte</button>
-            {% if filas %}
-            <form method="POST" action="{{ url_for('dashboard_rpt.exportar') }}" style="display: inline;">
-                <input type="hidden" name="desde" value="{{ desde }}">
-                <input type="hidden" name="hasta" value="{{ hasta }}">
-                <button type="submit" class="btn btn-secondary">📥 Exportar CSV</button>
-            </form>
-            {% endif %}
-        </div>
+        <button type="submit" class="btn btn-primary">📊 Emitir Reporte</button>
     </form>
+
+    {% if filas %}
+    <form method="POST" action="{{ url_for('dashboard_rpt.exportar') }}" style="margin-top: 12px;">
+        <input type="hidden" name="tab" value="{{ tab }}">
+        <input type="hidden" name="desde" value="{{ desde }}">
+        <input type="hidden" name="hasta" value="{{ hasta }}">
+        <button type="submit" class="btn btn-secondary">📥 Exportar CSV</button>
+    </form>
+    {% endif %}
 </div>
 
-{# ── Tabla de consumo (Flujo Básico paso 4) ── #}
 {% if filas %}
-<div class="table-responsive">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Venta ID</th>
-                <th>Fecha</th>
-                <th>Producto</th>
-                <th>Cantidad</th>
-                <th>Precio Unit.</th>
-                <th>Subtotal</th>
-                <th>Total Venta</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for f in filas %}
-            <tr>
-                <td><code>{{ f.venta_id }}</code></td>
-                <td>{{ f.fecha }}</td>
-                <td><strong>{{ f.producto }}</strong></td>
-                <td>{{ f.cantidad }}</td>
-                <td>S/ {{ "%.2f"|format(f.precio_unitario) }}</td>
-                <td>S/ {{ "%.2f"|format(f.subtotal) }}</td>
-                <td><strong>S/ {{ "%.2f"|format(f.total_venta) }}</strong></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+    {# ── Ventas: una fila por venta, con el detalle del pedido del Cajero ── #}
+    {% if tab == 'ventas' %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Venta</th>
+                    <th>Fecha</th>
+                    <th>Detalle del pedido</th>
+                    <th>Ítems</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for venta in filas %}
+                <tr>
+                    <td><code>{{ venta.venta_id }}</code></td>
+                    <td>{{ venta.fecha }}</td>
+                    <td>
+                        {% if venta.lineas %}
+                        <ul class="lista-receta">
+                            {% for linea in venta.lineas %}
+                            <li>
+                                {{ linea.cantidad }} × <strong>{{ linea.producto }}</strong>
+                                a S/ {{ "%.2f"|format(linea.precio_unitario) }}
+                                = S/ {{ "%.2f"|format(linea.subtotal) }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <em>Sin detalle</em>
+                        {% endif %}
+                    </td>
+                    <td>{{ venta.num_items }}</td>
+                    <td><strong>S/ {{ "%.2f"|format(venta.total) }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ── Ajustes de inventario (CU-04): tipo y motivo ── #}
+    {% elif tab == 'ajustes' %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Insumo</th>
+                    <th>Cantidad</th>
+                    <th>Motivo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ajuste in filas %}
+                <tr>
+                    <td>{{ ajuste.fecha }}</td>
+                    <td>
+                        <span class="stock-badge {{ 'badge-success' if ajuste.es_entrada else 'badge-danger' }}">
+                            {{ ajuste.tipo }}
+                        </span>
+                    </td>
+                    <td><strong>{{ ajuste.insumo }}</strong></td>
+                    <td>
+                        {{ '+' if ajuste.es_entrada else '' }}{{ ajuste.cantidad }} {{ ajuste.unidad }}
+                    </td>
+                    <td>{{ ajuste.motivo }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ── Pedidos a proveedor (CU-05) ── #}
+    {% elif tab == 'pedidos' %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Pedido</th>
+                    <th>Fecha</th>
+                    <th>Proveedor</th>
+                    <th>Estado</th>
+                    <th>Insumos solicitados</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pedido in filas %}
+                <tr>
+                    <td><code>{{ pedido.pedido_id }}</code></td>
+                    <td>{{ pedido.fecha }}</td>
+                    <td>
+                        <strong>{{ pedido.proveedor }}</strong><br>
+                        <small>{{ pedido.telefono }}</small>
+                    </td>
+                    <td><span class="stock-badge badge-success">{{ pedido.estado }}</span></td>
+                    <td>
+                        {% if pedido.lineas %}
+                        <ul class="lista-receta">
+                            {% for linea in pedido.lineas %}
+                            <li>{{ linea.cantidad }} {{ linea.unidad }} de <strong>{{ linea.insumo }}</strong></li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <em>Sin detalle</em>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
 {% elif emitido == "1" %}
 <div class="empty-state">
     <p style="font-size: 1.5rem;">🔍</p>
     <p style="font-size: 1.1rem; font-weight: 600;">No se hallaron registros</p>
-    <p>No hay ventas registradas en el rango de fechas seleccionado.</p>
+    <p>No hay movimientos de este tipo entre {{ desde }} y {{ hasta }}.</p>
 </div>
+{% else %}
+<div class="empty-state">
+    <p>Configura las fechas y pulsa <strong>«Emitir Reporte»</strong> para ver los datos.</p>
+</div>
+{% endif %}
 {% endif %}
 {% endblock %}

@@ -1,14 +1,18 @@
 """
 CU-07: Consultar Dashboard y Reportes
-Blueprint de reportes — KPIs en tiempo real, tabla de consumo con filtro
-por fecha y exportación a CSV.
+Blueprint de reportes — KPIs en tiempo real y tres reportes con filtro por
+fecha y exportación a CSV:
+
+  * ventas   — cada venta con el detalle de productos que registró el Cajero.
+  * ajustes  — ajustes de inventario (tipo de operación y motivo) del CU-04.
+  * pedidos  — órdenes de compra a proveedor del CU-05, con sus insumos.
 
 RNF-INV-PER-03: indicadores de stock en tiempo real.
 RNF-INV-PER-02: tabla de consumo con respuesta < 3 segundos.
 RN03: todas las agregaciones filtran por restaurante_id.
 """
 
-from datetime import datetime, date
+from datetime import date
 import csv
 import io
 
@@ -26,10 +30,28 @@ from app.utils.supabase_client import get_supabase_usuario
 
 dashboard_bp = Blueprint("dashboard_rpt", __name__, url_prefix="/reportes")
 
+# Pestañas disponibles y su etiqueta. La clave viaja en ?tab=.
+PESTANAS = {
+    "ventas": "🧾 Ventas",
+    "ajustes": "📦 Ajustes de inventario",
+    "pedidos": "🚚 Pedidos a proveedor",
+}
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _fin_del_dia(hasta: str) -> str:
+    """
+    Convierte 'YYYY-MM-DD' en el último instante de ese día.
+
+    Sin esto, comparar una columna TIMESTAMPTZ contra la fecha pelada equivale
+    a las 00:00:00, y el reporte "hasta hoy" se comía todo lo registrado hoy:
+    el caso más habitual, porque el Administrador consulta el día en curso.
+    """
+    return f"{hasta}T23:59:59" if hasta else hasta
+
 
 def _hay_historial(restaurante_id: str) -> bool:
     """
@@ -64,7 +86,7 @@ def _kpis(restaurante_id: str) -> dict:
     Retorna un diccionario con las métricas agregadas.
     """
     supabase = get_supabase_usuario()
-    hoy = date.today().isoformat()  # "2026-07-14"
+    hoy = date.today().isoformat()  # "2026-07-22"
 
     # Ventas del día
     ventas_resp = (
@@ -134,57 +156,249 @@ def _kpis(restaurante_id: str) -> dict:
     }
 
 
-def _tabla_consumo(restaurante_id: str, desde: str, hasta: str):
+# ---------------------------------------------------------------------------
+# Reporte: ventas con su detalle
+# ---------------------------------------------------------------------------
+
+def _tabla_ventas(restaurante_id: str, desde: str, hasta: str):
     """
-    Consulta la tabla de consumo de insumos por ventas en el rango
-    de fechas indicado (RNF-INV-PER-02: respuesta < 3 segundos).
+    Ventas del periodo con el detalle de productos de cada una.
+
+    Una venta del carrito lleva varios productos, así que el reporte devuelve
+    una fila por VENTA con sus líneas anidadas: aplanarlo repetiría el total
+    de la venta en cada línea y cualquiera que sumara esa columna obtendría un
+    total inflado.
+
+    El detalle se trae en UNA sola consulta por lote (RNF-INV-PER-02), no una
+    por venta.
     """
     supabase = get_supabase_usuario()
 
-    # Obtener ventas del periodo
     ventas = (
         supabase.table("ventas")
         .select("id, total, created_at")
         .eq("restaurante_id", restaurante_id)
         .gte("created_at", desde)
-        .lte("created_at", hasta)
+        .lte("created_at", _fin_del_dia(hasta))
         .order("created_at", desc=True)
         .execute()
+        .data
+        or []
     )
-
-    if not ventas.data:
+    if not ventas:
         return []
 
-    # Para cada venta, obtener sus detalles con joins
-    filas = []
-    for venta in ventas.data:
-        detalles = (
-            supabase.table("detalle_ventas")
-            .select("cantidad, precio_unitario, productos(nombre)")
-            .eq("venta_id", venta["id"])
-            .execute()
+    detalles = (
+        supabase.table("detalle_ventas")
+        .select("venta_id, cantidad, precio_unitario, productos(nombre)")
+        .in_("venta_id", [v["id"] for v in ventas])
+        .execute()
+        .data
+        or []
+    )
+
+    por_venta: dict[str, list] = {}
+    for det in detalles:
+        producto = det.get("productos") or {}
+        por_venta.setdefault(det["venta_id"], []).append(
+            {
+                "producto": producto.get("nombre", "—"),
+                "cantidad": det["cantidad"],
+                "precio_unitario": det["precio_unitario"],
+                "subtotal": det["cantidad"] * det["precio_unitario"],
+            }
         )
 
-        if detalles.data:
-            for det in detalles.data:
-                producto_nombre = (
-                    det["productos"]["nombre"]
-                    if isinstance(det.get("productos"), dict)
-                    else "—"
-                )
-                filas.append(
-                    {
-                        "venta_id": str(venta["id"])[:8],
-                        "fecha": venta["created_at"][:19],
-                        "producto": producto_nombre,
-                        "cantidad": det["cantidad"],
-                        "precio_unitario": det["precio_unitario"],
-                        "subtotal": det["cantidad"] * det["precio_unitario"],
-                        "total_venta": venta["total"],
-                    }
-                )
+    filas = []
+    for venta in ventas:
+        lineas = sorted(por_venta.get(venta["id"], []), key=lambda l: l["producto"])
+        filas.append(
+            {
+                "venta_id": str(venta["id"])[:8],
+                "fecha": venta["created_at"][:19].replace("T", " "),
+                "total": venta["total"],
+                "num_items": len(lineas),
+                "lineas": lineas,
+            }
+        )
 
     return filas
+
+
+# ---------------------------------------------------------------------------
+# Reporte: ajustes de inventario (CU-04)
+# ---------------------------------------------------------------------------
+
+def _tabla_ajustes(restaurante_id: str, desde: str, hasta: str):
+    """
+    Movimientos manuales de stock del periodo: tipo de operación y motivo.
+
+    Excluye el tipo 'Venta': esos movimientos los escribe la RPC de venta y ya
+    tienen su propio reporte. Aquí solo van los ajustes que alguien decidió a
+    mano (merma, pérdida, ingreso de mercadería), que es lo que se audita.
+    """
+    supabase = get_supabase_usuario()
+
+    movimientos = (
+        supabase.table("auditoria_inventario")
+        .select("fecha, tipo_operacion, cantidad_afectada, motivo, insumos(nombre, unidad)")
+        .eq("restaurante_id", restaurante_id)
+        .neq("tipo_operacion", "Venta")
+        .gte("fecha", desde)
+        .lte("fecha", _fin_del_dia(hasta))
+        .order("fecha", desc=True)
+        .execute()
+        .data
+        or []
+    )
+
+    filas = []
+    for movimiento in movimientos:
+        insumo = movimiento.get("insumos") or {}
+        cantidad = movimiento["cantidad_afectada"]
+        filas.append(
+            {
+                "fecha": (movimiento.get("fecha") or "")[:19].replace("T", " "),
+                # El tipo se guarda en minúsculas ('merma', 'perdida', 'ingreso').
+                "tipo": movimiento["tipo_operacion"].capitalize(),
+                "insumo": insumo.get("nombre", "(insumo eliminado)"),
+                "unidad": insumo.get("unidad", ""),
+                "cantidad": cantidad,
+                # El signo ya distingue entrada de salida (ver convención en 002).
+                "es_entrada": cantidad > 0,
+                "motivo": movimiento.get("motivo") or "—",
+            }
+        )
+
+    return filas
+
+
+# ---------------------------------------------------------------------------
+# Reporte: pedidos a proveedor (CU-05)
+# ---------------------------------------------------------------------------
+
+def _tabla_pedidos(restaurante_id: str, desde: str, hasta: str):
+    """
+    Órdenes de compra del periodo con su proveedor y los insumos solicitados.
+
+    Misma forma que el reporte de ventas: una fila por PEDIDO con sus líneas
+    anidadas, y el detalle en una sola consulta por lote.
+    """
+    supabase = get_supabase_usuario()
+
+    pedidos = (
+        supabase.table("pedidos")
+        .select("id, estado, fecha_creacion, proveedores(nombre, telefono)")
+        .eq("restaurante_id", restaurante_id)
+        .gte("fecha_creacion", desde)
+        .lte("fecha_creacion", _fin_del_dia(hasta))
+        .order("fecha_creacion", desc=True)
+        .execute()
+        .data
+        or []
+    )
+    if not pedidos:
+        return []
+
+    detalles = (
+        supabase.table("detalle_pedidos")
+        .select("pedido_id, cantidad, insumos(nombre, unidad)")
+        .in_("pedido_id", [p["id"] for p in pedidos])
+        .execute()
+        .data
+        or []
+    )
+
+    por_pedido: dict[str, list] = {}
+    for det in detalles:
+        insumo = det.get("insumos") or {}
+        por_pedido.setdefault(det["pedido_id"], []).append(
+            {
+                "insumo": insumo.get("nombre", "(insumo eliminado)"),
+                "unidad": insumo.get("unidad", ""),
+                "cantidad": det["cantidad"],
+            }
+        )
+
+    filas = []
+    for pedido in pedidos:
+        proveedor = pedido.get("proveedores") or {}
+        lineas = sorted(por_pedido.get(pedido["id"], []), key=lambda l: l["insumo"])
+        filas.append(
+            {
+                "pedido_id": str(pedido["id"])[:8],
+                "fecha": (pedido.get("fecha_creacion") or "")[:19].replace("T", " "),
+                "proveedor": proveedor.get("nombre", "(proveedor eliminado)"),
+                "telefono": proveedor.get("telefono") or "—",
+                "estado": pedido.get("estado") or "—",
+                "num_items": len(lineas),
+                "lineas": lineas,
+            }
+        )
+
+    return filas
+
+
+# Cada pestaña declara de dónde saca sus filas y cómo se aplanan para el CSV.
+# Mantener las dos cosas juntas evita que el reporte en pantalla y el
+# exportado se separen con el tiempo.
+def _filas_de(tab: str, restaurante_id: str, desde: str, hasta: str):
+    if tab == "ajustes":
+        return _tabla_ajustes(restaurante_id, desde, hasta)
+    if tab == "pedidos":
+        return _tabla_pedidos(restaurante_id, desde, hasta)
+    return _tabla_ventas(restaurante_id, desde, hasta)
+
+
+def _csv_de(tab: str, filas: list):
+    """Devuelve (cabecera, filas planas) del reporte indicado."""
+    if tab == "ajustes":
+        cabecera = ["Fecha", "Tipo", "Insumo", "Cantidad", "Unidad", "Motivo"]
+        return cabecera, [
+            [f["fecha"], f["tipo"], f["insumo"], f["cantidad"], f["unidad"], f["motivo"]]
+            for f in filas
+        ]
+
+    if tab == "pedidos":
+        cabecera = ["Pedido", "Fecha", "Proveedor", "Estado", "Insumo", "Cantidad", "Unidad"]
+        planas = []
+        for pedido in filas:
+            if not pedido["lineas"]:
+                planas.append(
+                    [pedido["pedido_id"], pedido["fecha"], pedido["proveedor"],
+                     pedido["estado"], "—", 0, ""]
+                )
+            for linea in pedido["lineas"]:
+                planas.append(
+                    [pedido["pedido_id"], pedido["fecha"], pedido["proveedor"],
+                     pedido["estado"], linea["insumo"], linea["cantidad"], linea["unidad"]]
+                )
+        return cabecera, planas
+
+    cabecera = ["Venta", "Fecha", "Producto", "Cantidad", "Precio Unit.", "Subtotal", "Total Venta"]
+    planas = []
+    for venta in filas:
+        if not venta["lineas"]:
+            planas.append([venta["venta_id"], venta["fecha"], "—", 0, 0, 0, venta["total"]])
+        for linea in venta["lineas"]:
+            planas.append(
+                [venta["venta_id"], venta["fecha"], linea["producto"], linea["cantidad"],
+                 linea["precio_unitario"], linea["subtotal"], venta["total"]]
+            )
+    return cabecera, planas
+
+
+def _rango_pedido():
+    """Fechas del formulario, con el mes en curso por defecto."""
+    hoy = date.today()
+    desde = request.values.get("desde", "").strip() or hoy.replace(day=1).isoformat()
+    hasta = request.values.get("hasta", "").strip() or hoy.isoformat()
+    return desde, hasta
+
+
+def _pestana_pedida() -> str:
+    tab = request.values.get("tab", "ventas").strip()
+    return tab if tab in PESTANAS else "ventas"
 
 
 # ---------------------------------------------------------------------------
@@ -196,10 +410,14 @@ def _tabla_consumo(restaurante_id: str, desde: str, hasta: str):
 @admin_required
 def index():
     """
-    Muestra el dashboard con KPIs y el formulario de filtro por fecha.
-    Si no hay historial de transacciones, muestra una advertencia.
+    Muestra los KPIs, el filtro por fecha y, si ya se emitió el reporte
+    (?emitido=1), la tabla de la pestaña seleccionada.
+
+    El filtro viaja por la URL para que cambiar de pestaña conserve el rango
+    de fechas sin tener que volver a emitir el reporte.
     """
     restaurante_id = get_current_restaurante_id()
+    kpis = _kpis(restaurante_id)
 
     if not _hay_historial(restaurante_id):
         flash(
@@ -207,24 +425,27 @@ def index():
             "warning",
         )
         # Aún mostramos los KPIs (todos en cero)
-        kpis = _kpis(restaurante_id)
-        return render_template("reportes/dashboard.html", kpis=kpis, filas=[], sin_historial=True)
+        return render_template(
+            "reportes/dashboard.html",
+            kpis=kpis,
+            filas=[],
+            tab="ventas",
+            pestanas=PESTANAS,
+            sin_historial=True,
+        )
 
-    kpis = _kpis(restaurante_id)
-
-    # Fechas por defecto: últimos 7 días
-    hoy = date.today()
-    desde = request.args.get("desde", hoy.replace(day=1).isoformat())
-    hasta = request.args.get("hasta", hoy.isoformat())
-
-    # Configurar el filtro para que solo aparezca al emitir reporte
-    filas = []
+    desde, hasta = _rango_pedido()
+    tab = _pestana_pedida()
     emitido = request.args.get("emitido", "0")
+
+    filas = _filas_de(tab, restaurante_id, desde, hasta) if emitido == "1" else []
 
     return render_template(
         "reportes/dashboard.html",
         kpis=kpis,
         filas=filas,
+        tab=tab,
+        pestanas=PESTANAS,
         desde=desde,
         hasta=hasta,
         emitido=emitido,
@@ -237,11 +458,11 @@ def index():
 @admin_required
 def generar():
     """
-    Flujo Básico paso 3: configura las fechas de filtro y emite el reporte.
-    Flujo Básico paso 4: muestra mensaje de confirmación con cantidad de registros.
-    """
-    restaurante_id = get_current_restaurante_id()
+    Flujo Básico paso 3: emite el reporte con las fechas indicadas.
 
+    Redirige a index con el rango en la URL (patrón Post/Redirect/Get) para
+    que recargar o cambiar de pestaña no reenvíe el formulario.
+    """
     desde = request.form.get("desde", "").strip()
     hasta = request.form.get("hasta", "").strip()
 
@@ -249,29 +470,18 @@ def generar():
         flash("Debes indicar ambas fechas para emitir el reporte.", "warning")
         return redirect(url_for("dashboard_rpt.index"))
 
-    kpis = _kpis(restaurante_id)
-    filas = _tabla_consumo(restaurante_id, desde, hasta)
+    if desde > hasta:
+        flash("La fecha 'desde' no puede ser posterior a la fecha 'hasta'.", "warning")
+        return redirect(url_for("dashboard_rpt.index"))
 
-    # Flujo Básico paso 4: mensaje de confirmación
-    if filas:
-        flash(
-            f"✓ Reporte emitido correctamente. Se encontraron {len(filas)} registros.",
-            "success",
+    return redirect(
+        url_for(
+            "dashboard_rpt.index",
+            desde=desde,
+            hasta=hasta,
+            tab=_pestana_pedida(),
+            emitido="1",
         )
-    else:
-        flash(
-            "✓ Reporte emitido. No se hallaron registros en el rango de fechas indicado.",
-            "info",
-        )
-
-    return render_template(
-        "reportes/dashboard.html",
-        kpis=kpis,
-        filas=filas,
-        desde=desde,
-        hasta=hasta,
-        emitido="1",
-        sin_historial=False,
     )
 
 
@@ -279,24 +489,25 @@ def generar():
 @login_required
 @admin_required
 def exportar():
-    """
-    Exporta la tabla de consumo a CSV (funcionalidad opcional).
-    """
+    """Exporta a CSV el reporte de la pestaña activa."""
     restaurante_id = get_current_restaurante_id()
-    desde = request.form.get("desde", "").strip()
-    hasta = request.form.get("hasta", "").strip()
+    desde, hasta = _rango_pedido()
+    tab = _pestana_pedida()
 
-    filas = _tabla_consumo(restaurante_id, desde, hasta)
+    filas = _filas_de(tab, restaurante_id, desde, hasta)
+    cabecera, planas = _csv_de(tab, filas)
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Venta ID", "Fecha", "Producto", "Cantidad", "Precio Unit.", "Subtotal", "Total Venta"])
-    for f in filas:
-        writer.writerow([f["venta_id"], f["fecha"], f["producto"], f["cantidad"], f["precio_unitario"], f["subtotal"], f["total_venta"]])
+    writer.writerow(cabecera)
+    writer.writerows(planas)
 
     output.seek(0)
     return Response(
-        output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": f"attachment;filename=reporte_{desde}_a_{hasta}.csv"},
+        # BOM para que Excel en Windows abra el CSV con los acentos correctos.
+        "﻿" + output.getvalue(),
+        mimetype="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f"attachment;filename=reporte_{tab}_{desde}_a_{hasta}.csv"
+        },
     )

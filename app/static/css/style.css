@@ -625,3 +625,51 @@ a.card:hover {
 .kpi-orange { border-left-color: var(--color-warning); }
 .kpi-blue   { border-left-color: var(--color-info); }
 .kpi-purple { border-left-color: #9333ea; }
+
+/* ---------- Carrito del Cajero (CU-06) ---------- */
+.carrito {
+    margin-bottom: 2rem;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--color-border, #e5e7eb);
+    border-radius: var(--radio, 12px);
+    background: var(--superficie, #fff);
+    box-shadow: var(--sombra, 0 1px 3px rgba(0,0,0,.08));
+}
+
+.carrito h2 { margin: 0 0 1rem; }
+.carrito tfoot th { font-size: 1.05rem; }
+
+/* Los botones "Confirmar" y "Cancelar" son dos formularios distintos:
+   sin esto quedarían uno debajo del otro. */
+.carrito > .form-inline { gap: .5rem; margin-top: 1rem; }
+
+/* ---------- Pestañas de reportes (CU-07) ---------- */
+.tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--color-border, #e5e7eb);
+}
+
+.tab {
+    padding: .6rem 1.1rem;
+    border-radius: 8px 8px 0 0;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: .92rem;
+    color: var(--color-text-muted, #6b7280);
+    background: transparent;
+    /* Compensa el borde inferior de .tabs para que la pestaña activa se
+       "pegue" al contenido en vez de flotar sobre la línea. */
+    margin-bottom: -2px;
+    border-bottom: 2px solid transparent;
+}
+
+.tab:hover { background: #f3f4f6; }
+
+.tab-activa {
+    color: var(--marca, #b45309);
+    border-bottom-color: var(--marca, #b45309);
+    background: #fff;
+}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Productos — Big Royal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📦 Productos</h1>
+    <a href="{{ url_for('productos.crear') }}" class="btn btn-success">+ Nuevo Producto</a>
+</div>
+
+<form method="get" action="{{ url_for('productos.listar') }}" class="form-inline" style="margin-bottom: 16px;">
+    <label for="q">Buscar producto</label>
+    <input type="text" name="q" id="q" value="{{ q }}" placeholder="Nombre del producto">
+    <button type="submit" class="btn btn-primary">Buscar</button>
+    {% if q %}
+    <a href="{{ url_for('productos.listar') }}" class="btn btn-secondary">Limpiar</a>
+    {% endif %}
+</form>
+
+{% if productos %}
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th>Precio</th>
+                <th>Receta</th>
+                <th class="col-acciones">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+            <tr>
+                <td><strong>{{ producto.nombre }}</strong></td>
+                <td>S/ {{ "%.2f"|format(producto.precio or 0) }}</td>
+                <td>
+                    {% if producto.num_insumos > 0 %}
+                    <span class="stock-badge badge-success">{{ producto.num_insumos }} insumo(s)</span>
+                    {% else %}
+                    <span class="stock-badge badge-danger">sin receta</span>
+                    {% endif %}
+                </td>
+                <td class="col-acciones">
+                    <a href="{{ url_for('productos.gestionar', producto_id=producto.id) }}" class="btn btn-sm btn-primary">Gestionar receta</a>
+                    <a href="{{ url_for('productos.editar', producto_id=producto.id) }}" class="btn btn-sm btn-secondary">Editar</a>
+                    <form method="POST" action="{{ url_for('productos.eliminar', producto_id=producto.id) }}" class="form-inline" onsubmit="return confirm('¿Eliminar «{{ producto.nombre }}» y su receta? El producto no se puede eliminar si tiene ventas registradas.');">
+                        <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% elif q %}
+<div class="empty-state">
+    <p>🔍 No se encontraron productos que coincidan con «{{ q }}».</p>
+    <a href="{{ url_for('productos.listar') }}" class="btn btn-secondary">Ver todos</a>
+</div>
+{% else %}
+<div class="empty-state">
+    <p>📭 No hay productos registrados todavía.</p>
+    <a href="{{ url_for('productos.crear') }}" class="btn btn-primary">Crear el primer producto</a>
+</div>
+{% endif %}
+{% endblock %}

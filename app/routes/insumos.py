@@ -15,7 +15,7 @@ from flask import (
     flash,
 )
 from app.utils.auth import login_required, admin_required, get_current_restaurante_id
-from app.utils.supabase_client import get_supabase
+from app.utils.supabase_client import get_supabase_usuario
 
 insumos_bp = Blueprint("insumos", __name__, url_prefix="/insumos")
 
@@ -38,25 +38,31 @@ def _columnas_relevantes() -> str:
 @admin_required
 def listar():
     """
-    Lista todos los insumos del restaurante del administrador autenticado.
+    Lista los insumos del restaurante del administrador autenticado, con
+    filtro opcional por nombre (?q=).
 
     RN03: la consulta filtra explícitamente por restaurante_id para
-    garantizar el aislamiento cross-tenant.
+    garantizar el aislamiento cross-tenant. El filtro por nombre se aplica
+    DESPUÉS del filtro de tenant, nunca en su lugar.
     """
     restaurante_id = get_current_restaurante_id()
-    supabase = get_supabase()
+    supabase = get_supabase_usuario()
 
-    respuesta = (
+    q = request.args.get("q", "").strip()
+
+    consulta = (
         supabase.table("insumos")
         .select(_columnas_relevantes())
         .eq("restaurante_id", restaurante_id)
-        .order("nombre")
-        .execute()
     )
+    if q:
+        consulta = consulta.ilike("nombre", f"%{q}%")
+
+    respuesta = consulta.order("nombre").execute()
 
     insumos = respuesta.data if respuesta.data else []
 
-    return render_template("insumos/listar.html", insumos=insumos)
+    return render_template("insumos/listar.html", insumos=insumos, q=q)
 
 
 # ---------------------------------------------------------------------------
@@ -77,7 +83,7 @@ def crear():
 
     # ── POST ──────────────────────────────────────────────────────────
     restaurante_id = get_current_restaurante_id()
-    supabase = get_supabase()
+    supabase = get_supabase_usuario()
 
     nombre = request.form.get("nombre", "").strip()
     unidad = request.form.get("unidad", "").strip()
@@ -152,7 +158,7 @@ def editar(id: str):
         return redirect(url_for("insumos.listar"))
 
     restaurante_id = get_current_restaurante_id()
-    supabase = get_supabase()
+    supabase = get_supabase_usuario()
 
     if request.method == "GET":
         respuesta = (
@@ -255,7 +261,7 @@ def eliminar(id: str):
         return redirect(url_for("insumos.listar"))
 
     restaurante_id = get_current_restaurante_id()
-    supabase = get_supabase()
+    supabase = get_supabase_usuario()
 
     # ── RF-INV-04: Validar que el insumo no esté en recetas activas ──
     receta_check = (

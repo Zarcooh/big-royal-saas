@@ -13,15 +13,15 @@
         <div class="nav-brand">🍔 Big Royal</div>
         <div class="nav-links">
             {% if session.rol == 'Administrador' %}
-            <a href="{{ url_for('auth.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('auth.dashboard') }}">Panel</a>
             <a href="{{ url_for('insumos.listar') }}">Insumos</a>
-            <a href="{{ url_for('recetas.listar') }}">Recetas</a>
+            <a href="{{ url_for('productos.listar') }}">Productos</a>
             <a href="{{ url_for('inventario.listar') }}">Inventario</a>
             <a href="{{ url_for('pedidos.listar') }}">Pedidos</a>
             <a href="{{ url_for('dashboard_rpt.index') }}">Reportes</a>
             {% endif %}
             {% if session.rol == 'Cajero' %}
-            <a href="{{ url_for('auth.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('auth.dashboard') }}">Panel</a>
             <a href="{{ url_for('ventas.registrar') }}">Registrar Venta</a>
             {% endif %}
         </div>

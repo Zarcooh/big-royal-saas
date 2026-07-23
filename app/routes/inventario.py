@@ -28,7 +28,7 @@ from app.utils.auth import (
     get_current_restaurante_id,
     get_current_user_id,
 )
-from app.utils.supabase_client import get_supabase
+from app.utils.supabase_client import get_supabase_usuario
 
 inventario_bp = Blueprint("inventario", __name__, url_prefix="/inventario")
 
@@ -56,7 +56,7 @@ def _es_uuid(valor: str) -> bool:
 def _insumo_del_tenant(insumo_id: str, restaurante_id: str):
     """Retorna la ficha del insumo solo si pertenece al restaurante en sesión."""
     respuesta = (
-        get_supabase()
+        get_supabase_usuario()
         .table("insumos")
         .select("id, nombre, unidad, stock_actual, stock_minimo")
         .eq("id", insumo_id)
@@ -75,7 +75,7 @@ def listar():
     q = request.args.get("q", "").strip()
 
     consulta = (
-        get_supabase()
+        get_supabase_usuario()
         .table("insumos")
         .select("id, nombre, unidad, stock_actual, stock_minimo")
         .eq("restaurante_id", restaurante_id)
@@ -139,7 +139,7 @@ def ajustar(insumo_id):
         return redirect(destino)
 
     try:
-        get_supabase().rpc(
+        get_supabase_usuario().rpc(
             "registrar_ajuste_inventario",
             {
                 "p_restaurante_id": restaurante_id,

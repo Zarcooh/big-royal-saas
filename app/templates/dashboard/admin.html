@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard Administrador — Big Royal{% endblock %}
+{% block title %}Panel de Administración — Big Royal{% endblock %}
 
 {% block content %}
 <div class="dashboard-header">
@@ -14,10 +14,10 @@
         <p>Gestiona los insumos del restaurante: crear, editar y eliminar.</p>
     </a>
 
-    <a href="{{ url_for('recetas.listar') }}" class="card">
+    <a href="{{ url_for('productos.listar') }}" class="card">
         <div class="card-icon">📋</div>
-        <h3>Recetas</h3>
-        <p>Define qué insumos consume cada producto del menú.</p>
+        <h3>Productos</h3>
+        <p>Gestiona los productos del menú y la receta de cada uno.</p>
     </a>
 
     <a href="{{ url_for('inventario.listar') }}" class="card">
@@ -34,8 +34,8 @@
 
     <a href="{{ url_for('dashboard_rpt.index') }}" class="card">
         <div class="card-icon">📈</div>
-        <h3>Dashboard y Reportes</h3>
-        <p>KPIs en tiempo real, tabla de consumo y exportación de datos.</p>
+        <h3>Reportes</h3>
+        <p>KPIs en tiempo real, ventas, ajustes de inventario y pedidos.</p>
     </a>
 </div>
 {% endblock %}
