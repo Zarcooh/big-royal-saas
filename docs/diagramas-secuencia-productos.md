@@ -1,11 +1,11 @@
-# Diagramas de secuencia — Módulo Recetas
+# Diagramas de secuencia — Módulo Productos
 
-Diagramas de secuencia de los casos de uso del módulo de Recetas, basados en la
-implementación real (`app/routes/recetas.py`). Se usa la convención
+Diagramas de secuencia de los casos de uso del módulo de Productos, basados en la
+implementación real (`app/routes/productos.py`). Se usa la convención
 boundary-control-entity de los demás diagramas del proyecto:
 
 - **`i_`** interfaz (boundary): la vista con la que interactúa el usuario.
-- **`c_`** control: el blueprint/controlador de recetas.
+- **`c_`** control: el blueprint/controlador de productos.
 - **`e_`** entidad: las tablas de la base (`productos`, `recetas`, `insumos`).
 
 > Estos diagramas se renderizan automáticamente en GitHub. Para el informe puedes
@@ -13,14 +13,14 @@ boundary-control-entity de los demás diagramas del proyecto:
 
 ---
 
-## CU-06 — Listar Recetas (= CU-22 Listar Productos)
+## CU-22 — Listar Productos (antes CU-06 Listar Recetas)
 
 ```mermaid
 sequenceDiagram
     actor Admin as Administrador
     participant iP as i_principal
-    participant iR as i_Recetas
-    participant cR as c_Recetas
+    participant iR as i_Productos
+    participant cR as c_Productos
     participant eProd as e_producto
     participant eRec as e_receta
 
@@ -51,8 +51,8 @@ receta" con CU-12; aquí solo se muestra la carga de la pantalla.
 ```mermaid
 sequenceDiagram
     actor Admin as Administrador
-    participant iR as i_Recetas
-    participant cR as c_Recetas
+    participant iR as i_Productos
+    participant cR as c_Productos
     participant eProd as e_producto
     participant eRec as e_receta
     participant eIns as e_insumo
@@ -81,8 +81,8 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor Admin as Administrador
-    participant iR as i_Recetas
-    participant cR as c_Recetas
+    participant iR as i_Productos
+    participant cR as c_Productos
     participant eProd as e_producto
     participant eIns as e_insumo
     participant eRec as e_receta
@@ -115,8 +115,8 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor Admin as Administrador
-    participant iR as i_Recetas
-    participant cR as c_Recetas
+    participant iR as i_Productos
+    participant cR as c_Productos
     participant eProd as e_producto
     participant eRec as e_receta
 
@@ -144,8 +144,8 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor Admin as Administrador
-    participant iR as i_Recetas
-    participant cR as c_Recetas
+    participant iR as i_Productos
+    participant cR as c_Productos
     participant eProd as e_producto
     participant eRec as e_receta
 
@@ -175,8 +175,8 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor Admin as Administrador
-    participant iR as i_Recetas
-    participant cR as c_Recetas
+    participant iR as i_Productos
+    participant cR as c_Productos
     participant eProd as e_producto
     participant eRec as e_receta
 
