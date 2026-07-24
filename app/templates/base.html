@@ -19,6 +19,7 @@
             <a href="{{ url_for('inventario.listar') }}">Inventario</a>
             <a href="{{ url_for('pedidos.listar') }}">Pedidos</a>
             <a href="{{ url_for('dashboard_rpt.index') }}">Reportes</a>
+            <a href="{{ url_for('alertas.listar') }}">Alertas{% if alertas_activas %} <span class="nav-badge">{{ alertas_activas }}</span>{% endif %}</a>
             {% endif %}
             {% if session.rol == 'Cajero' %}
             <a href="{{ url_for('auth.dashboard') }}">Panel</a>

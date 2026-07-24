@@ -21,9 +21,9 @@ implementación real** (código en `app/` y migraciones). Incluye:
   receta** (no un FK genérico).
 - **RF-INV-16** — agregar que el ajuste indica **tipo (merma, pérdida, ingreso) y
   motivo**.
-- **RF-INV-18** — ⚠️ **Pendiente / no implementado como alerta automática.** Hoy
-  solo existe el KPI "insumos críticos" del Dashboard y la lista de críticos en
-  Pedidos; no hay una alerta dedicada.
+- **RF-INV-18** — ✅ **Implementado** (migración 011): tras el auto-descuento de
+  una venta, si un insumo cruza a su mínimo se genera una alerta en el módulo
+  **Alertas**, con contador en el navbar y aviso en el comprobante del Cajero.
 - **RF-INV-20 / 21 / 22** — agregar **exportación a CSV**; y en ventas, el
   **detalle de productos por venta**.
 - **RF-INV-05** — el alcance real del control de rol Administrador abarca insumos,
@@ -90,7 +90,7 @@ receta** para vender; **rechazar por stock insuficiente**.
 | ID | Descripción | Actor | Estado |
 | --- | --- | --- | --- |
 | RF-INV-16 | Ajustar manualmente el stock de un insumo indicando **tipo (merma, pérdida o ingreso) y motivo**, dejando registro en el log de auditoría. | Administrador | ✅ *(corregido)* |
-| RF-INV-18 | Generar una alerta automática cuando el stock de un insumo llegue a su mínimo. | Sistema | ⚠️ **Pendiente** — hoy solo KPI "insumos críticos" + lista de críticos en Pedidos; sin alerta dedicada. |
+| RF-INV-18 | Generar una alerta automática cuando, tras el auto-descuento de una venta, el stock de un insumo cruce a su nivel mínimo (visible en el módulo **Alertas**). | Sistema | ✅ *(migración 011 — CU-17)* |
 
 ### Proveedores
 
@@ -109,11 +109,18 @@ receta** para vender; **rechazar por stock insuficiente**.
 
 ---
 
-## Nota sobre RF-INV-18 (alerta de stock mínimo)
+## RF-INV-18 — Alerta de stock mínimo (implementado, CU-17)
 
-Es el único requisito **no implementado como tal**. Opciones para el informe:
-1. Marcarlo como **pendiente / trabajo futuro**.
-2. **Reformularlo** a lo que sí existe: *"El sistema resalta los insumos cuyo
-   stock está en o bajo el mínimo en el Dashboard (KPI de insumos críticos) y en
-   el módulo de Pedidos."*
-3. **Implementarlo** de verdad (CU-17) — se puede hacer si lo deciden.
+La RPC `registrar_venta_multiple` (migración 011) detecta, tras descontar cada
+insumo, si su stock **cruzó** de estar por encima a estar en o por debajo del
+mínimo; en ese caso inserta una fila en la tabla `alertas_stock`. Las alertas se
+muestran en tres lugares:
+
+- **Módulo Alertas** (`/alertas`, solo Administrador): lista de alertas activas
+  (o todas), con opción de marcarlas como **atendidas**.
+- **Contador** junto al enlace "Alertas" del navbar (número de alertas activas).
+- **Aviso en el comprobante** de la venta que las disparó: el Cajero ve qué
+  insumos quedaron en o bajo su mínimo.
+
+Solo se genera en el **cruce** (no en cada venta mientras siga crítico), para no
+duplicar alertas del mismo insumo.

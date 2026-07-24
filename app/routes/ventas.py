@@ -379,7 +379,7 @@ def _resumen_de(venta_id) -> dict:
 
     movimientos = (
         supabase.table("auditoria_inventario")
-        .select("cantidad_afectada, insumos(nombre, unidad, stock_actual)")
+        .select("cantidad_afectada, insumos(nombre, unidad, stock_actual, stock_minimo)")
         .eq("motivo", f"Venta {venta_id}")
         .execute()
         .data
@@ -389,12 +389,17 @@ def _resumen_de(venta_id) -> dict:
     insumos = []
     for movimiento in movimientos:
         insumo = movimiento.get("insumos") or {}
+        stock_actual = insumo.get("stock_actual", 0)
+        stock_minimo = insumo.get("stock_minimo", 0)
         insumos.append(
             {
                 "nombre": insumo.get("nombre", "(insumo eliminado)"),
                 "unidad": insumo.get("unidad", ""),
                 "descontado": abs(movimiento["cantidad_afectada"]),
-                "stock_actual": insumo.get("stock_actual", 0),
+                "stock_actual": stock_actual,
+                # RF-INV-18: marca los insumos que quedaron en o bajo su mínimo,
+                # para avisar al Cajero en el mismo comprobante.
+                "en_alerta": stock_minimo is not None and stock_actual <= stock_minimo,
             }
         )
     insumos.sort(key=lambda i: i["nombre"])

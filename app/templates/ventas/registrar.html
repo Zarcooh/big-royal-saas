@@ -41,6 +41,14 @@
     </table>
 
     {% if resumen.insumos %}
+    {% set en_alerta = resumen.insumos | selectattr('en_alerta') | list %}
+    {% if en_alerta %}
+    <div class="flash flash-warning" style="margin: 12px 0;">
+        🚨 <strong>Alerta de stock mínimo:</strong> tras esta venta,
+        {{ en_alerta | map(attribute='nombre') | join(', ') }}
+        quedó en o bajo su nivel mínimo. Revisa el módulo de Alertas o genera un pedido.
+    </div>
+    {% endif %}
     <h4>Insumos descontados</h4>
     <table class="tabla">
         <thead>
@@ -52,8 +60,8 @@
         </thead>
         <tbody>
             {% for insumo in resumen.insumos %}
-            <tr>
-                <td>{{ insumo.nombre }}</td>
+            <tr class="{{ 'row-alert' if insumo.en_alerta else '' }}">
+                <td>{{ insumo.nombre }}{% if insumo.en_alerta %} <span class="stock-badge badge-danger">mínimo</span>{% endif %}</td>
                 <td>−{{ insumo.descontado }} {{ insumo.unidad }}</td>
                 <td>{{ insumo.stock_actual }} {{ insumo.unidad }}</td>
             </tr>

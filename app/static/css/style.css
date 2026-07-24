@@ -673,3 +673,18 @@ a.card:hover {
     border-bottom-color: var(--marca, #b45309);
     background: #fff;
 }
+
+/* ---------- Badge del navbar (alertas activas) ---------- */
+.nav-badge {
+    display: inline-block;
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--peligro, #dc2626);
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    vertical-align: middle;
+}

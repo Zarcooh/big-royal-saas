@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Alertas de stock — Big Royal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>🚨 Alertas de stock mínimo</h1>
+</div>
+<p class="subtitulo">
+    Insumos que alcanzaron su stock mínimo tras el auto-descuento de una venta
+    (RF-INV-18). Márcalas como atendidas cuando repongas stock o generes un pedido.
+</p>
+
+<div class="form-inline" style="margin-bottom: 16px;">
+    <a href="{{ url_for('alertas.listar', ver='activas') }}"
+       class="btn btn-sm {{ 'btn-primary' if ver != 'todas' else 'btn-secondary' }}">Activas</a>
+    <a href="{{ url_for('alertas.listar', ver='todas') }}"
+       class="btn btn-sm {{ 'btn-primary' if ver == 'todas' else 'btn-secondary' }}">Todas</a>
+</div>
+
+{% if alertas %}
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Insumo</th>
+                <th>Stock</th>
+                <th>Mínimo</th>
+                <th>Origen</th>
+                <th>Estado</th>
+                <th class="col-acciones">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in alertas %}
+            <tr class="{{ 'row-alert' if not a.atendida else '' }}">
+                <td>{{ (a.creada_en or '')[:19] | replace('T', ' ') }}</td>
+                <td><strong>{{ a.insumos.nombre if a.insumos else '(insumo eliminado)' }}</strong></td>
+                <td>
+                    <span class="stock-badge badge-danger">
+                        {{ "%.2f"|format(a.stock_actual) }} {{ a.insumos.unidad if a.insumos else '' }}
+                    </span>
+                </td>
+                <td>{{ "%.2f"|format(a.stock_minimo) }}</td>
+                <td>{{ a.origen }}</td>
+                <td>
+                    {% if a.atendida %}
+                    <span class="stock-badge badge-success">Atendida</span>
+                    {% else %}
+                    <span class="stock-badge badge-danger">Activa</span>
+                    {% endif %}
+                </td>
+                <td class="col-acciones">
+                    {% if not a.atendida %}
+                    <form method="post" action="{{ url_for('alertas.atender', alerta_id=a.id) }}" class="form-inline">
+                        <button type="submit" class="btn btn-sm btn-success">Marcar atendida</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <p>✅ {{ 'No hay alertas activas.' if ver != 'todas' else 'No hay alertas registradas.' }}</p>
+</div>
+{% endif %}
+{% endblock %}
