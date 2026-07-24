@@ -371,7 +371,7 @@ plantilla de casos de uso del equipo.
 
 | Acción del Actor | Respuesta del Sistema |
 | --- | --- |
-| 1. El Administrador accede al módulo "Recetas". | 2. El sistema lista los productos con nombre, precio y estado de receta (n.º de insumos o "sin receta"), ordenados alfabéticamente. |
+| 1. El Administrador accede al módulo "Productos". | 2. El sistema lista los productos con nombre, precio y estado de receta (n.º de insumos o "sin receta"), ordenados alfabéticamente. |
 | 3. El Administrador busca o filtra por nombre. | 4. El sistema filtra la lista según el criterio ingresado. |
 
 **Flujos alternos**
@@ -430,8 +430,8 @@ plantilla de casos de uso del equipo.
 
 **Flujos alternos**
 
-- **2.1.** Si el producto no existe o no pertenece al restaurante, el sistema informa y vuelve al catálogo.
-- **4.1.** Si el nombre está vacío o el precio es inválido o negativo, el sistema muestra un error y no guarda.
+- **2.1.** *(Salvaguarda)* Si el producto no existe o no pertenece al restaurante (p. ej. una URL manipulada), el sistema informa y vuelve al catálogo; en el flujo normal se pulsa "Editar" en la fila del propio producto.
+- **4.1.** Si el nombre está vacío (o solo espacios) o el precio es negativo, el sistema muestra un error y no guarda. *(El `min=0`/`required` del formulario lo previene en el navegador; el servidor lo revalida.)*
 
 **Condiciones**
 
