@@ -373,7 +373,7 @@ def gestionar(producto_id):
     ]
 
     return render_template(
-        "recetas/gestionar.html",
+        "productos/gestionar.html",
         producto=producto,
         receta=receta,
         insumos_disponibles=insumos_disponibles,
