@@ -1,12 +1,15 @@
 # Diagramas del módulo de Recetas / Productos
 
-Diagramas de **colaboración** (`docs/diagramas-colaboracion/`) y **actividad**
-(`docs/diagramas-actividad/`) en formato **draw.io** (`.drawio`, editables en
-<https://app.diagrams.net>), con el formato del docente:
+Diagramas de **colaboración** (`docs/diagramas-colaboracion/`), **actividad**
+(`docs/diagramas-actividad/`) y **secuencia** (`docs/diagramas-secuencia/`), todos
+en formato **draw.io** (`.drawio`, editables en <https://app.diagrams.net>), con
+el formato del docente:
 
 - **Colaboración:** robustez BCE — Administrador (actor) + `i_` (boundary),
   `c_` (control), `e_` (entity), con mensajes `metodo()`.
 - **Actividad:** inicio ● → acciones → decisiones (`¿…?` con ramas *sí/no*) → fin.
+- **Secuencia:** líneas de vida BCE (`i_`/`c_`/`e_`), mensajes de llamada
+  (flecha sólida) y retorno (flecha punteada), y fragmentos `alt` con su guarda.
 
 ## Diagramas incluidos
 
@@ -23,6 +26,11 @@ Diagramas de **colaboración** (`docs/diagramas-colaboracion/`) y **actividad**
 - CU-25 Eliminar Producto
 
 > Módulo de Productos **completo** (colaboración + actividad de los 4 CU).
+
+### Secuencia — también incluye la venta (CU-15)
+La carpeta `docs/diagramas-secuencia/` tiene los `.drawio` de secuencia de
+CU-08/10/11/12 y CU-22/23/24/25, más **CU-15 Registrar Venta**. (Antes estaban
+en Mermaid; se pasaron a draw.io para unificar formato con los demás.)
 
 ## Casos de uso eliminados (sin diagrama)
 

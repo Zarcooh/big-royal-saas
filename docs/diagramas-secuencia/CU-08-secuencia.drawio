@@ -1,0 +1,31 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Secuencia - Eliminar Receta (CU-08)" id="Secuencia - Eliminar Receta (CU-08)">
+    <mxGraphModel dx="1000" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="960" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="c11" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="110" y="80" as="sourcePoint"/><mxPoint x="110" y="620" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c12" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="285" y="80" as="sourcePoint"/><mxPoint x="285" y="620" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c13" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="460" y="80" as="sourcePoint"/><mxPoint x="460" y="620" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c14" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="635" y="80" as="sourcePoint"/><mxPoint x="635" y="620" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c15" value="" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="810" y="80" as="sourcePoint"/><mxPoint x="810" y="620" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="title" value="Secuencia - Eliminar Receta (CU-08)" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="70" y="5" width="320" height="26" as="geometry"/></mxCell>
+        <mxCell id="h0" value="Administrador" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=11;" vertex="1" parent="1"><mxGeometry x="95" y="35" width="30" height="50" as="geometry"/></mxCell>
+        <mxCell id="h1" value="i_Productos" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1"><mxGeometry x="210" y="40" width="150" height="40" as="geometry"/></mxCell>
+        <mxCell id="h2" value="c_Productos" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1"><mxGeometry x="385" y="40" width="150" height="40" as="geometry"/></mxCell>
+        <mxCell id="h3" value="e_producto" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1"><mxGeometry x="560" y="40" width="150" height="40" as="geometry"/></mxCell>
+        <mxCell id="h4" value="e_receta" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1"><mxGeometry x="735" y="40" width="150" height="40" as="geometry"/></mxCell>
+        <mxCell id="c1" value="click &quot;Eliminar receta completa&quot;" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="110" y="110" as="sourcePoint"/><mxPoint x="285" y="110" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c2" value="solicita confirmación" style="html=1;endArrow=open;dashed=1;rounded=0;fontSize=10;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="285" y="160" as="sourcePoint"/><mxPoint x="110" y="160" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c3" value="confirma" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="110" y="210" as="sourcePoint"/><mxPoint x="285" y="210" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c4" value="eliminarReceta(producto_id)" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="285" y="260" as="sourcePoint"/><mxPoint x="460" y="260" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c5" value="validarProductoTenant(...)" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="460" y="310" as="sourcePoint"/><mxPoint x="635" y="310" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c6" value="producto válido" style="html=1;endArrow=open;dashed=1;rounded=0;fontSize=10;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="635" y="360" as="sourcePoint"/><mxPoint x="460" y="360" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c7" value="eliminarTodasLasLineas(producto_id)" style="html=1;endArrow=block;rounded=0;fontSize=10;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="460" y="410" as="sourcePoint"/><mxPoint x="810" y="410" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c8" value="n líneas eliminadas" style="html=1;endArrow=open;dashed=1;rounded=0;fontSize=10;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="810" y="460" as="sourcePoint"/><mxPoint x="460" y="460" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c9" value="redirigir + &quot;receta eliminada&quot;" style="html=1;endArrow=open;dashed=1;rounded=0;fontSize=10;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="460" y="510" as="sourcePoint"/><mxPoint x="285" y="510" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="c10" value="producto sin receta" style="html=1;endArrow=open;dashed=1;rounded=0;fontSize=10;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="285" y="560" as="sourcePoint"/><mxPoint x="110" y="560" as="targetPoint"/></mxGeometry></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
