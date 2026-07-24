@@ -101,13 +101,13 @@ plantilla de casos de uso del equipo.
 
 | Acción del Actor | Respuesta del Sistema |
 | --- | --- |
-| 1. En "Gestionar receta", el Administrador pulsa "Eliminar receta completa". | 2. El sistema solicita confirmación. |
+| 1. En "Gestionar receta", el Administrador pulsa "Eliminar receta completa" (el botón **solo aparece si el producto tiene receta**). | 2. El sistema pide confirmación. |
 | 3. El Administrador confirma. | 4. El sistema elimina todas las líneas de la receta y muestra un mensaje de éxito. |
 
 **Flujos alternos**
 
 - **3.1.** Si el Administrador cancela, no se realiza ningún cambio.
-- **4.1.** Si el producto no tenía receta, el sistema informa que no había receta que eliminar.
+- **4.1.** *(Salvaguarda)* Si el producto no tuviera receta, el sistema informa que no había receta que eliminar; en la práctica el botón solo se muestra cuando hay receta, así que este caso no se alcanza desde la interfaz.
 
 **Condiciones**
 
@@ -160,8 +160,8 @@ plantilla de casos de uso del equipo.
 
 **Flujos alternos**
 
-- **3.1.** Si el Administrador cancela, no se realiza ningún cambio.
-- **4.1.** Si la línea no pertenece a la receta del producto, el sistema informa la inconsistencia.
+- **3.1.** Si el Administrador cancela (diálogo de confirmación), no se realiza ningún cambio.
+- **4.1.** *(Salvaguarda)* Si la línea no perteneciera a la receta del producto, el sistema informa la inconsistencia; en el flujo normal el botón "Eliminar" está en la propia fila del insumo, así que siempre corresponde.
 
 **Condiciones**
 
@@ -186,8 +186,8 @@ plantilla de casos de uso del equipo.
 
 **Flujos alternos**
 
-- **2.1.** Si la cantidad es menor o igual a cero, el sistema muestra un error y no guarda.
-- **2.2.** Si la línea no pertenece al producto, el sistema informa la inconsistencia.
+- **2.1.** Si la cantidad es menor o igual a cero (o vacía), el sistema muestra un error y no guarda. *(El input ya exige `min=0.001`, pero el servidor lo revalida.)*
+- **2.2.** *(Salvaguarda)* Si la línea no perteneciera al producto, el sistema informa la inconsistencia; en el flujo normal el campo de cantidad está en la propia fila del insumo, así que siempre corresponde.
 
 **Condiciones**
 
