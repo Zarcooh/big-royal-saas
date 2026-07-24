@@ -16,12 +16,13 @@ Diagramas de **colaboración** (`docs/diagramas-colaboracion/`) y **actividad**
 - CU-11 Eliminar Insumo de Receta
 - CU-12 Editar Insumo de Receta
 
-### Productos (CU-22)
+### Productos (CU-22, CU-23, CU-24, CU-25)
 - CU-22 Listar Productos
+- CU-23 Agregar Producto
+- CU-24 Editar Producto
+- CU-25 Eliminar Producto
 
-> **Faltan** los diagramas de **CU-23 Agregar Producto**, **CU-24 Editar
-> Producto** y **CU-25 Eliminar Producto**: corresponden a quien tenga asignado
-> el módulo de Productos.
+> Módulo de Productos **completo** (colaboración + actividad de los 4 CU).
 
 ## Casos de uso eliminados (sin diagrama)
 
