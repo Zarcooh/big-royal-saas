@@ -1,32 +1,34 @@
 <mxfile host="app.diagrams.net">
   <diagram name="Diagrama de actividad - Agregar Insumo a Receta (CU-10)" id="Diagrama de actividad - Agregar Insumo a Receta (CU-10)">
-    <mxGraphModel dx="900" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="760" math="0" shadow="0">
+    <mxGraphModel dx="900" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="815" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
         <mxCell id="t" value="Diagrama de actividad - Agregar Insumo a Receta (CU-10)" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="250" y="10" width="320" height="36" as="geometry"/></mxCell>
         <mxCell id="s0" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="405" y="70" width="30" height="30" as="geometry"/></mxCell>
-        <mxCell id="s1" value="En &quot;Gestionar receta&quot; elige un insumo y su cantidad, pulsa &quot;Agregar&quot;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="300" y="145" width="240" height="50" as="geometry"/></mxCell>
+        <mxCell id="s1" value="En &quot;Gestionar receta&quot;, el desplegable muestra solo los insumos que aun NO estan en la receta" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="300" y="145" width="240" height="50" as="geometry"/></mxCell>
         <mxCell id="c1" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="s0" target="s1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="s2" value="Insumo valido y cantidad &gt; 0?" style="rhombus;whiteSpace=wrap;html=1;fontSize=11;" vertex="1" parent="1"><mxGeometry x="355" y="240" width="130" height="80" as="geometry"/></mxCell>
-        <mxCell id="b2" value="Muestra error de validacion" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="640" y="245" width="190" height="50" as="geometry"/></mxCell>
+        <mxCell id="s2" value="Quedan insumos disponibles?" style="rhombus;whiteSpace=wrap;html=1;fontSize=11;" vertex="1" parent="1"><mxGeometry x="355" y="240" width="130" height="80" as="geometry"/></mxCell>
+        <mxCell id="b2" value="Avisa: todos los insumos ya estan en la receta" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="640" y="245" width="190" height="50" as="geometry"/></mxCell>
         <mxCell id="c2" value="no" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="s2" target="b2"><mxGeometry relative="1" as="geometry"/></mxCell>
         <mxCell id="beo2" value="" style="ellipse;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="720" y="320" width="30" height="30" as="geometry"/></mxCell>
         <mxCell id="bei2" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="727" y="327" width="16" height="16" as="geometry"/></mxCell>
         <mxCell id="c3" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="b2" target="beo2"><mxGeometry relative="1" as="geometry"/></mxCell>
         <mxCell id="c4" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="s1" target="s2"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="s3" value="El insumo ya esta en la receta?" style="rhombus;whiteSpace=wrap;html=1;fontSize=11;" vertex="1" parent="1"><mxGeometry x="355" y="365" width="130" height="80" as="geometry"/></mxCell>
-        <mxCell id="b3" value="Avisa: ya forma parte de la receta" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="640" y="370" width="190" height="50" as="geometry"/></mxCell>
-        <mxCell id="c5" value="si" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="s3" target="b3"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="beo3" value="" style="ellipse;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="720" y="445" width="30" height="30" as="geometry"/></mxCell>
-        <mxCell id="bei3" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="727" y="452" width="16" height="16" as="geometry"/></mxCell>
-        <mxCell id="c6" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="b3" target="beo3"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="c7" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="s2" target="s3"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="s4" value="Agrega el insumo a la receta" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="300" y="490" width="240" height="50" as="geometry"/></mxCell>
+        <mxCell id="s3" value="Elige un insumo, ingresa la cantidad y pulsa &quot;Agregar&quot;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="300" y="365" width="240" height="50" as="geometry"/></mxCell>
+        <mxCell id="c5" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="s2" target="s3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="s4" value="Cantidad valida (&gt; 0)?" style="rhombus;whiteSpace=wrap;html=1;fontSize=11;" vertex="1" parent="1"><mxGeometry x="355" y="460" width="130" height="80" as="geometry"/></mxCell>
+        <mxCell id="b4" value="Muestra error de validacion" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="640" y="465" width="190" height="50" as="geometry"/></mxCell>
+        <mxCell id="c6" value="no" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="s4" target="b4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="beo4" value="" style="ellipse;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="720" y="540" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="bei4" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="727" y="547" width="16" height="16" as="geometry"/></mxCell>
+        <mxCell id="c7" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="b4" target="beo4"><mxGeometry relative="1" as="geometry"/></mxCell>
         <mxCell id="c8" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="s3" target="s4"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="s5" value="" style="ellipse;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="405" y="585" width="30" height="30" as="geometry"/></mxCell>
-        <mxCell id="s5i" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="412" y="592" width="16" height="16" as="geometry"/></mxCell>
+        <mxCell id="s5" value="Agrega el insumo a la receta" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="300" y="585" width="240" height="50" as="geometry"/></mxCell>
         <mxCell id="c9" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="s4" target="s5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="s6" value="" style="ellipse;fillColor=none;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="405" y="680" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="s6i" value="" style="ellipse;fillColor=#000000;strokeColor=#000000;" vertex="1" parent="1"><mxGeometry x="412" y="687" width="16" height="16" as="geometry"/></mxCell>
+        <mxCell id="c10" value="" style="endArrow=block;html=1;rounded=0;" edge="1" parent="1" source="s5" target="s6"><mxGeometry relative="1" as="geometry"/></mxCell>
       </root>
     </mxGraphModel>
   </diagram>

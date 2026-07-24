@@ -128,12 +128,13 @@ plantilla de casos de uso del equipo.
 
 | Acción del Actor | Respuesta del Sistema |
 | --- | --- |
-| 1. En "Gestionar receta", el Administrador selecciona un insumo, ingresa la cantidad de consumo y pulsa "Agregar". | 2. El sistema valida los datos, agrega la línea a la receta y actualiza la vista. |
+| 1. En "Gestionar receta", el Administrador selecciona un insumo del desplegable —que **solo muestra los insumos aún NO incluidos** en la receta—, ingresa la cantidad de consumo y pulsa "Agregar". | 2. El sistema valida los datos, agrega la línea a la receta y actualiza la vista. |
 
 **Flujos alternos**
 
-- **2.1.** Si el insumo ya forma parte de la receta, el sistema avisa y no lo duplica.
-- **2.2.** Si la cantidad es menor o igual a cero, o el insumo no es válido o no pertenece al restaurante, el sistema muestra un error y no agrega la línea.
+- **1.1.** Si todos los insumos del catálogo ya están en la receta, el desplegable queda sin opciones y el sistema informa que "no quedan insumos disponibles".
+- **2.1.** Si la cantidad es menor o igual a cero, o el insumo no es válido o no pertenece al restaurante, el sistema muestra un error y no agrega la línea.
+- **2.2.** *(Salvaguarda)* Como el desplegable ya excluye los insumos repetidos, no se puede elegir uno duplicado desde la interfaz; si aun así llegara uno, el servidor lo rechaza (RF-INV-10 / restricción UNIQUE).
 
 **Condiciones**
 
