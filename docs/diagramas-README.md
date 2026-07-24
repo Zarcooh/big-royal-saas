@@ -8,34 +8,26 @@ Diagramas de **colaboración** (`docs/diagramas-colaboracion/`) y **actividad**
   `c_` (control), `e_` (entity), con mensajes `metodo()`.
 - **Actividad:** inicio ● → acciones → decisiones (`¿…?` con ramas *sí/no*) → fin.
 
-## Dos opciones para presentar (elige una)
+## Diagramas incluidos
 
-Como el modelo de casos de uso se puede plantear de dos formas, se dejan ambas
-para comparar:
-
-### `opcion-7cu/` — numeración original (7 CU)
-Un diagrama por cada CU asignado, tal cual la lista original:
-
-- CU-06 Listar Recetas
-- CU-07 Agregar Recetas
+### Recetas (CU-08, CU-10, CU-11, CU-12)
 - CU-08 Eliminar Receta
-- CU-09 Editar Receta
 - CU-10 Agregar Insumo a Receta
 - CU-11 Eliminar Insumo de Receta
 - CU-12 Editar Insumo de Receta
 
-### `opcion-5cu/` — modelo unificado (5 CU)
-Refleja la app real (no hay pantallas separadas de "crear/editar receta"):
+### Productos (CU-22)
+- CU-22 Listar Productos
 
-- CU-22 Listar Productos *(sustituye a CU-06 Listar Recetas)*
-- CU-08 Eliminar Receta
-- CU-10 Agregar Insumo a Receta *(absorbe CU-07 Agregar Receta)*
-- CU-11 Eliminar Insumo de Receta
-- CU-12 Editar Insumo de Receta *(absorbe CU-09 Editar Receta)*
+> **Faltan** los diagramas de **CU-23 Agregar Producto**, **CU-24 Editar
+> Producto** y **CU-25 Eliminar Producto**: corresponden a quien tenga asignado
+> el módulo de Productos.
 
-> CU-08, CU-10, CU-11 y CU-12 son idénticos en ambas opciones; la diferencia es
-> que la opción de 5 usa **CU-22 Listar Productos** y descarta CU-06/07/09 como
-> CU separados.
+## Casos de uso eliminados (sin diagrama)
+
+CU-06 (Listar Recetas), CU-07 (Agregar Recetas) y CU-09 (Editar Receta) se
+**eliminaron** del modelo; su función la cubren CU-22, CU-10 y CU-12
+respectivamente. No llevan diagrama.
 
 ## Nota sobre las figuras
 
